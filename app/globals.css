@@ -61,6 +61,31 @@ button {
   isolation: isolate;
 }
 
+.stageMissionBlurActive .pastelBackgroundViewport,
+.stageMissionBlurActive .canvas,
+.stageMissionBlurActive .ui {
+  filter: blur(18px) brightness(1.1) saturate(0.92);
+  transform: scale(1.035);
+  opacity: 0.58;
+  transition:
+    filter 0.38s ease,
+    transform 0.38s ease,
+    opacity 0.38s ease;
+  will-change: filter, transform, opacity;
+}
+
+.stageMissionBlurActive .canvas {
+  transform-origin: 50% 50%;
+}
+
+.stageMissionBlurActive .missionGalleryBackdrop {
+  background:
+    radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.34), transparent 38%),
+    linear-gradient(180deg, rgba(255, 236, 250, 0.28), rgba(222, 239, 255, 0.24));
+  backdrop-filter: blur(8px) brightness(1.05) saturate(1.04);
+  -webkit-backdrop-filter: blur(8px) brightness(1.05) saturate(1.04);
+}
+
 
 .mainExperienceFadeIn {
   position: absolute;
