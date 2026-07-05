@@ -4626,7 +4626,7 @@ if (state.landed) {
   );
 
   return (
-    <main className="stage">
+    <main className={`stage${popupOpen ? ' stageMissionBlurActive' : ''}`}>
       {!introFinished ? (
         <ShoppingIntroSplash
           onFinished={finishIntro}
