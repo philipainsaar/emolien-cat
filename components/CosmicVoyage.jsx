@@ -4832,71 +4832,81 @@ if (state.landed) {
 	          
 
 	      {popupOpen && (
-        <div className="popupWindow">
-          <div className="popupWindow missionGalleryWindow">
-              <div className="termHeader">
-                  <span>{copy.collectionsTitle}</span>
-                      <button type="button" data-button-sound="/sounds/mission-close.mp3" onClick={resetExperience}>
-                            •
-                                </button>
-                                  </div>
+        <div
+          className="missionGalleryBackdrop"
+          role="presentation"
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) {
+              resetExperience();
+            }
+          }}
+        >
+          <div
+            className="missionGalleryWindow"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="missionGalleryTitle"
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <div className="termHeader missionGalleryTitleBar">
+              <span id="missionGalleryTitle">{copy.collectionsTitle}</span>
+            </div>
 
-                                    <div className="missionGalleryIntro">
-</div>
+            <div className="missionGalleryIntro" />
 
-<button
-  type="button"
-  className="collectionMiniGlobeOverlay collectionMiniGlobeGameButton"
-  aria-label="Start alien cat game"
-  data-button-sound="/sounds/start-alien-cat-game.mp3"
-  onClick={(event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    requestSiteMusic('play', RUNNER_GAME_MUSIC_FILE, { volume: RUNNER_GAME_MUSIC_VOLUME });
-    setRunnerGameOpen(true);
-  }}
-  style={{
-    border: 0,
-    padding: 0,
-    background: 'transparent',
-    cursor: 'pointer',
-    pointerEvents: 'auto',
-    lineHeight: 0,
-    WebkitTapHighlightColor: 'transparent',
-  }}
->
-  <CollectionMiniGlobe />
-</button>
+            <button
+              type="button"
+              className="collectionMiniGlobeOverlay collectionMiniGlobeGameButton"
+              aria-label="Start alien cat game"
+              data-button-sound="/sounds/start-alien-cat-game.mp3"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                requestSiteMusic('play', RUNNER_GAME_MUSIC_FILE, { volume: RUNNER_GAME_MUSIC_VOLUME });
+                setRunnerGameOpen(true);
+              }}
+              style={{
+                border: 0,
+                padding: 0,
+                background: 'transparent',
+                cursor: 'pointer',
+                pointerEvents: 'auto',
+                lineHeight: 0,
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <CollectionMiniGlobe />
+            </button>
 
-                                                    <div className="missionImageGrid">
-                                                        {MISSION_LINK_IMAGES.map((item) => {
-                                                          const collectionTitle =
-                                                            copy.collectionNames?.[item.titleKey] || item.title;
-                                                          const openCollectionLabel = formatCopy(copy.openCollection, {
-                                                            title: collectionTitle,
-                                                          });
+            <div className="missionImageGrid">
+              {MISSION_LINK_IMAGES.map((item) => {
+                const collectionTitle =
+                  copy.collectionNames?.[item.titleKey] || item.title;
+                const openCollectionLabel = formatCopy(copy.openCollection, {
+                  title: collectionTitle,
+                });
 
-                                                          return (
-                                                            <a
-                                                              key={item.title}
-                                                              className="missionImageLink"
-                                                              href={item.url}
-                                                              data-button-sound={item.sound}
-                                                              target="_blank"
-                                                              rel="noreferrer"
-                                                              aria-label={openCollectionLabel}
-                                                            >
-                                                              <img
-                                                                src={item.image}
-                                                                alt={collectionTitle}
-                                                                loading="lazy"
-                                                              />
-                                                              <span>{collectionTitle}</span>
-                                                            </a>
-                                                          );
-                                                        })}
-                                                                                                                                                                                      </div>
-                                                                                                                                                                                      </div>
+                return (
+                  <a
+                    key={item.title}
+                    className="missionImageLink"
+                    href={item.url}
+                    data-button-sound={item.sound}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={openCollectionLabel}
+                  >
+                    <img
+                      src={item.image}
+                      alt={collectionTitle}
+                      loading="lazy"
+                    />
+                    <span>{collectionTitle}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
