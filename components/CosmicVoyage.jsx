@@ -2917,7 +2917,10 @@ side: source.side ?? THREE.FrontSide,
                     aria-label={formatCopy(languageCopy.translateToLanguage, { language: language.nativeName || language.name })}
                     aria-pressed={selectedTranslateLanguageCode === language.code}
                     data-button-sound={`/sounds/intro-language-${language.code}.mp3`}
-                    onClick={() => onLanguageChange?.(language.code)}
+                    onClick={() => {
+                      onLanguageChange?.(language.code);
+                      setShowTranslateModal(false);
+                    }}
                   >
                     <img
   className="shoppingIntroTranslateFlagImage"
@@ -4760,7 +4763,10 @@ if (state.landed) {
                     })}
                     aria-pressed={selectedLanguageCode === language.code}
                     data-button-sound={`/sounds/main-language-${language.code}.mp3`}
-                    onClick={() => setSelectedLanguageCode(language.code)}
+                    onClick={() => {
+                      setSelectedLanguageCode(language.code);
+                      setShowMainTranslateModal(false);
+                    }}
                   >
                     <img
                       className="shoppingIntroTranslateFlagImage"
