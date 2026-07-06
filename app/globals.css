@@ -725,11 +725,13 @@ button {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(0.62rem, 2vw, 0.95rem);
-  width: min(64vw, 292px);
   max-width: 100%;
   margin: 0 auto;
   align-items: start;
   justify-items: center;
+    row-gap: clamp(2.05rem, 5.4vw, 3.6rem) !important;
+  column-gap: clamp(2.25rem, 6.4vw, 4.4rem) !important;
+  width: min(82vw, 430px) !important;
 }
 
 .missionImageLink {
@@ -774,8 +776,8 @@ button {
 }
 
 .missionImageLink img {
-  width: min(72%, 112px);
-  max-width: 112px;
+  width: min(96%, 178px) !important;
+  max-width: 178px !important;
   height: auto;
   aspect-ratio: 1;
   object-fit: contain;
