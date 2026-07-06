@@ -2145,8 +2145,8 @@ html[lang="it"] .shoppingIntroText span {
 
 /* Final stageMission title + mini globe stack: keep Real Blur, move the globe close below the title. */
 :root {
-  --stage-mission-title-top: 1rem;
-  --stage-mission-globe-top: 4.95rem;
+  --stage-mission-title-top: 2rem;
+  --stage-mission-globe-top: 5.95rem;
 }
 
 .missionGalleryTitleBar {
@@ -2195,8 +2195,8 @@ html[lang="it"] .shoppingIntroText span {
 
 @media (max-width: 520px) {
   :root {
-    --stage-mission-title-top: 1rem;
-    --stage-mission-globe-top: 3.75rem;
+    --stage-mission-title-top: 2rem;
+    --stage-mission-globe-top: 4.75rem;
   }
 
   .collectionMiniGlobeOverlay {
