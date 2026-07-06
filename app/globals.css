@@ -64,9 +64,9 @@ button {
 .stageMissionBlurActive .pastelBackgroundViewport,
 .stageMissionBlurActive .canvas,
 .stageMissionBlurActive .ui {
-  filter: blur(18px) brightness(1.1) saturate(0.92);
-  transform: scale(1.035);
-  opacity: 0.58;
+  filter: blur(8px) brightness(1.06) saturate(0.96);
+  transform: scale(1.015);
+  opacity: 0.72;
   transition:
     filter 0.38s ease,
     transform 0.38s ease,
