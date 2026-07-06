@@ -6,6 +6,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import CosmicRunnerOverlay from "./CosmicRunnerOverlay";
 
+import MissionLogoOrb from "./MissionLogoOrb";
+
 const CAT_MODEL_URL = '/models/alien-cat.glb';
 const BOAT_MODEL_URL = '/models/cosmic-boat.glb';
 const FLOAT_RING_MODEL_URL = '/models/float-ring.glb';
@@ -4865,6 +4867,8 @@ if (state.landed) {
               <span id="missionGalleryTitle">{copy.collectionsTitle}</span>
             </div>
 
+<MissionLogoOrb />
+			  
             <div className="missionGalleryIntro" />
 
             <button
