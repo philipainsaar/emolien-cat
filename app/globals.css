@@ -724,14 +724,13 @@ button {
   z-index: 3;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(0.62rem, 2vw, 0.95rem);
+  row-gap: clamp(2.05rem, 5.4vw, 3.6rem);
+  column-gap: clamp(2.25rem, 6.4vw, 4.4rem);
+  width: min(82vw, 430px);
   max-width: 100%;
   margin: 0 auto;
   align-items: start;
   justify-items: center;
-    row-gap: clamp(2.05rem, 5.4vw, 3.6rem) !important;
-  column-gap: clamp(2.25rem, 6.4vw, 4.4rem) !important;
-  width: min(82vw, 430px) !important;
 }
 
 .missionImageLink {
@@ -776,10 +775,10 @@ button {
 }
 
 .missionImageLink img {
-  width: min(96%, 178px) !important;
-  max-width: 178px !important;
+  width: min(96%, 178px);
+  max-width: 178px;
   height: auto;
-  aspect-ratio: 1;
+  aspect-ratio: 0;
   object-fit: contain;
   object-position: center center;
   border: 0 !important;
@@ -2113,8 +2112,9 @@ html[lang="it"] .shoppingIntroText span {
 
 /* Final stageMission icon spacing: transparent cells, smaller art, no cropping. */
 .missionImageGrid {
-  gap: clamp(0.62rem, 2vw, 0.95rem) !important;
-  width: min(64vw, 292px) !important;
+  row-gap: clamp(2.05rem, 5.4vw, 3.6rem) !important;
+  column-gap: clamp(2.25rem, 6.4vw, 4.4rem) !important;
+  width: min(82vw, 430px) !important;
 }
 
 .missionImageGrid .missionImageLink {
@@ -2123,10 +2123,10 @@ html[lang="it"] .shoppingIntroText span {
 }
 
 .missionImageGrid .missionImageLink img {
-  width: min(72%, 112px) !important;
-  max-width: 112px !important;
+  width: min(96%, 178px) !important;
+  max-width: 178px !important;
   height: auto !important;
-  aspect-ratio: 1 !important;
+  aspect-ratio: 0 !important;
   object-fit: contain !important;
   object-position: center center !important;
   overflow: visible !important;
