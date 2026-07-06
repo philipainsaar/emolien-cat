@@ -2233,7 +2233,7 @@ html[lang="it"] .shoppingIntroText span {
 
 
 .missionLogoOrbWrap {
-  width: min(58vw, 340px);
+  width: min(18vw, 128px);
   aspect-ratio: 1 / 1;
   margin: 0.25rem auto 1rem;
   position: relative;
@@ -2252,7 +2252,7 @@ html[lang="it"] .shoppingIntroText span {
 
 @media (max-width: 560px) {
   .missionLogoOrbWrap {
-    width: min(68vw, 280px);
+    width: min(18vw, 120px);
     margin: 0.1rem auto 0.75rem;
   }
 }
