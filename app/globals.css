@@ -2229,3 +2229,30 @@ html[lang="it"] .shoppingIntroText span {
   animation: none !important;
   filter: none !important;
 }
+
+
+
+.missionLogoOrbWrap {
+  width: min(58vw, 340px);
+  aspect-ratio: 1 / 1;
+  margin: 0.25rem auto 1rem;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+  filter:
+    drop-shadow(0 0 18px rgba(255, 183, 220, 0.45))
+    drop-shadow(0 0 28px rgba(174, 219, 255, 0.35));
+}
+
+.missionLogoOrbCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@media (max-width: 560px) {
+  .missionLogoOrbWrap {
+    width: min(68vw, 280px);
+    margin: 0.1rem auto 0.75rem;
+  }
+}
