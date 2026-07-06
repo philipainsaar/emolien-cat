@@ -2232,16 +2232,33 @@ html[lang="it"] .shoppingIntroText span {
 
 
 
-.missionLogoOrbWrap {
-  width: min(18vw, 128px);
-  aspect-ratio: 1 / 1;
-  margin: 0.25rem auto 1rem;
+.missionImageGrid {
   position: relative;
-  z-index: 2;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(2.2rem, 7vw, 4rem);
+  row-gap: clamp(4.2rem, 12vw, 6.2rem);
+}
+
+.missionImageGrid > .missionImageLink {
+  position: relative;
+  z-index: 1;
+}
+
+.missionImageGrid > .missionLogoOrbWrap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(30vw, 220px);
+  aspect-ratio: 1 / 1;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  z-index: 5;
   pointer-events: none;
   filter:
-    drop-shadow(0 0 18px rgba(255, 183, 220, 0.45))
-    drop-shadow(0 0 28px rgba(174, 219, 255, 0.35));
+    drop-shadow(0 0 18px rgba(255, 183, 220, 0.55))
+    drop-shadow(0 0 30px rgba(174, 219, 255, 0.42));
 }
 
 .missionLogoOrbCanvas {
@@ -2251,8 +2268,12 @@ html[lang="it"] .shoppingIntroText span {
 }
 
 @media (max-width: 560px) {
-  .missionLogoOrbWrap {
-    width: min(18vw, 120px);
-    margin: 0.1rem auto 0.75rem;
+  .missionImageGrid {
+    column-gap: 0.85rem;
+    row-gap: 4.8rem;
   }
-}
+
+  .missionImageGrid > .missionLogoOrbWrap {
+    width: min(40vw, 155px);
+  }
+  }
