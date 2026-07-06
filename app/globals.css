@@ -2215,8 +2215,7 @@ html[lang="it"] .shoppingIntroText span {
 }
 
 
-/* Runner game performance mode: hide and pause the heavy main scene while the game overlay is open. */
-.stage.runnerGameActive .mainExperienceFadeIn,
+/* Runner game performance mode: keep the overlay visible, but hide the heavy main scene behind it. */
 .stage.runnerGameActive .pastelBackgroundViewport,
 .stage.runnerGameActive .canvas,
 .stage.runnerGameActive .ui {
