@@ -64,7 +64,7 @@ button {
 .stageMissionBlurActive .pastelBackgroundViewport,
 .stageMissionBlurActive .canvas,
 .stageMissionBlurActive .ui {
-  filter: blur(8px) brightness(1.06) saturate(0.96);
+  filter: blur(6px) brightness(1.06) saturate(0.96);
   transform: scale(1.015);
   opacity: 0.72;
   transition:
@@ -82,8 +82,8 @@ button {
   background:
     radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.34), transparent 38%),
     linear-gradient(180deg, rgba(255, 236, 250, 0.28), rgba(222, 239, 255, 0.24));
-  backdrop-filter: blur(8px) brightness(1.05) saturate(1.04);
-  -webkit-backdrop-filter: blur(8px) brightness(1.05) saturate(1.04);
+  backdrop-filter: blur(3px) brightness(1.03) saturate(1.02);
+  -webkit-backdrop-filter: blur(3px) brightness(1.03) saturate(1.02);
 }
 
 
@@ -663,8 +663,8 @@ button {
   background:
     radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.16), transparent 38%),
     linear-gradient(180deg, rgba(255, 236, 250, 0.48), rgba(222, 239, 255, 0.4));
-  backdrop-filter: blur(18px) brightness(1.08) saturate(1.1);
-  -webkit-backdrop-filter: blur(18px) brightness(1.08) saturate(1.1);
+  backdrop-filter: blur(4px) brightness(1.04) saturate(1.04);
+  -webkit-backdrop-filter: blur(4px) brightness(1.04) saturate(1.04);
   cursor: pointer;
 }
 
@@ -2132,21 +2132,11 @@ html[lang="it"] .shoppingIntroText span {
   overflow: visible !important;
 }
 
-.missionGalleryTitleBar {
-  position: fixed !important;
-  top: 1rem !important;   /* very top */
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  z-index: 1005 !important;
-  width: min(88vw, 520px) !important;
-  text-align: center !important;
-  pointer-events: none !important;
-}
 
 /* Final stageMission title + mini globe stack: keep Real Blur, move the globe close below the title. */
 :root {
-  --stage-mission-title-top: 2rem;
-  --stage-mission-globe-top: 5.95rem;
+  --stage-mission-title-top: 1rem;
+  --stage-mission-globe-top: 3.95rem;
 }
 
 .missionGalleryTitleBar {
@@ -2193,19 +2183,6 @@ html[lang="it"] .shoppingIntroText span {
   pointer-events: auto !important;
 }
 
-@media (max-width: 520px) {
-  :root {
-    --stage-mission-title-top: 2rem;
-    --stage-mission-globe-top: 4.75rem;
-  }
-
-  .collectionMiniGlobeOverlay {
-    width: min(102px, 26vw) !important;
-    height: min(102px, 26vw) !important;
-  }
-}
-
-
 /* Fix: mini globe must stay clickable after moving it under the title. */
 .collectionMiniGlobeOverlay.collectionMiniGlobeGameButton,
 .collectionMiniGlobeGameButton {
@@ -2215,4 +2192,24 @@ html[lang="it"] .shoppingIntroText span {
 
 .collectionMiniGlobeOverlay.collectionMiniGlobeGameButton .collectionMiniGlobeCanvas {
   pointer-events: none !important;
+}
+
+/* Performance helper: when the stageMission popup is open, stop background sparkle motion behind the real blur. */
+.stageMissionBlurActive .pastelBackgroundMotion,
+.stageMissionBlurActive .movingSymbolLayer::before,
+.stageMissionBlurActive .movingSymbolLayer::after,
+.stageMissionBlurActive .movingBgSymbol {
+  animation-play-state: paused !important;
+}
+
+@media (max-width: 520px) {
+  :root {
+    --stage-mission-title-top: 1rem;
+    --stage-mission-globe-top: 3.75rem;
+  }
+
+  .collectionMiniGlobeOverlay {
+    width: min(102px, 26vw) !important;
+    height: min(102px, 26vw) !important;
+  }
 }
