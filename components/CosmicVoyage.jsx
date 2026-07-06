@@ -3046,6 +3046,7 @@ export default function CosmicVoyage() {
   const [loadingPercent, setLoadingPercent] = useState(0);
   const [popupOpen, setPopupOpen] = useState(false);
   const [runnerGameOpen, setRunnerGameOpen] = useState(false);
+  const runnerGameOpenRef = useRef(false);
   const [ringPopupOpen, setRingPopupOpen] = useState(false);
   const [ringPopupPlacement, setRingPopupPlacement] = useState({
     left: 72,
@@ -3068,6 +3069,11 @@ export default function CosmicVoyage() {
   const mainTranslateGlbStageRef = useRef(null);
   const [mainTranslateGlbStatusKey, setMainTranslateGlbStatusKey] = useState('chooseLanguage');
   const copy = useMemo(() => getSiteCopy(selectedLanguageCode), [selectedLanguageCode]);
+
+  useEffect(() => {
+    runnerGameOpenRef.current = runnerGameOpen;
+  }, [runnerGameOpen]);
+
   const selectedMainTranslateLanguage =
     TRANSLATE_LANGUAGE_OPTIONS.find((language) => language.code === selectedLanguageCode) ||
     TRANSLATE_LANGUAGE_OPTIONS[0];
@@ -4352,6 +4358,13 @@ scene.add(pinkWireframeGlobe);
 
     renderer.setAnimationLoop(() => {
       const delta = Math.min(clock.getDelta(), 0.05);
+
+      // When the runner game is open, pause this heavy background scene
+      // so the game gets the phone/GPU all to itself.
+      if (runnerGameOpenRef.current) {
+        return;
+      }
+
       elapsed += delta;
 
 pinkWireframeGlobe.rotation.y += delta * 0.42;
@@ -4626,7 +4639,7 @@ if (state.landed) {
   );
 
   return (
-    <main className={`stage${popupOpen ? ' stageMissionBlurActive' : ''}`}>
+    <main className={`stage${popupOpen ? ' stageMissionBlurActive' : ''}${runnerGameOpen ? ' runnerGameActive' : ''}`}>
       {!introFinished ? (
         <ShoppingIntroSplash
           onFinished={finishIntro}

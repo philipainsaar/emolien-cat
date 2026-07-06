@@ -11,6 +11,12 @@ const RUNNER_GAME_OVER_SOUND_URL = "/sounds/runner-game-over.mp3";
 const RUNNER_GAME_MUSIC_URL = "/sounds/runner-game-music.mp3";
 const RUNNER_GAME_MUSIC_VOLUME = 0.38;
 
+// Lighter rendering for mobile.
+const RUNNER_RENDER_PIXEL_RATIO = 1;
+const RUNNER_SCORE_MULTIPLIER = 12;
+const RUNNER_SPARKLE_COUNT = 12;
+const RUNNER_STRIPE_COUNT = 12;
+
 const LEADERBOARD_API_URL = "/api/leaderboard";
 const LOCAL_LEADERBOARD_KEY = "cosmicRunnerLeaderboardLocal";
 const PLAYER_NAME_KEY = "cosmicRunnerPlayerName";
@@ -248,8 +254,12 @@ export default function CosmicRunnerOverlay({
 
     const camera = new THREE.PerspectiveCamera(58, 1, 0.01, 100);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+const renderer = new THREE.WebGLRenderer({
+  antialias: false,
+  alpha: true,
+  powerPreference: "high-performance",
+});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, RUNNER_RENDER_PIXEL_RATIO));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
@@ -351,7 +361,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     const stripeMat = new THREE.MeshStandardMaterial({ color: colors.pink, roughness: 0.52 });
     const stripes = [];
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < RUNNER_STRIPE_COUNT; i++) {
       const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.045, 0.12), stripeMat);
       stripe.position.set(i * 2.2 - 12, 0.025, 2.12);
       scene.add(stripe);
@@ -392,7 +402,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     const sparkles = [];
     const sparkleMat = new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: colors.pink, emissiveIntensity: 0.62 });
-    for (let i = 0; i < 26; i++) {
+    for (let i = 0; i < RUNNER_SPARKLE_COUNT; i++) {
       const sparkle = new THREE.Mesh(new THREE.OctahedronGeometry(0.075, 0), sparkleMat);
       sparkle.position.set(
         THREE.MathUtils.randFloat(-5.5, 8),
@@ -448,7 +458,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       overRef.current?.classList.remove("show");
       for (const obstacle of obstacles) obstacleGroup.remove(obstacle);
       obstacles.length = 0;
-      spawnObstacle(4.8);
+      spawnObstacle(5.4);
       text();
       startGameMusic();
     }
@@ -510,6 +520,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       camera.updateProjectionMatrix();
       camera.position.set(0, h >= w ? 2.95 : 2.65, h >= w ? 6.65 : 6.2);
       camera.lookAt(-0.35, 1.12, 0);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, RUNNER_RENDER_PIXEL_RATIO));
       renderer.setSize(w, h);
     }
 
@@ -532,7 +543,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       if (running) {
         elapsed += delta;
         speed += delta * 0.11;
-        score = Math.floor(elapsed * 10);
+        score = Math.floor(elapsed * RUNNER_SCORE_MULTIPLIER);
         text();
 
         velocityY -= 0.62 * delta;
@@ -558,8 +569,8 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         nextSpawn -= delta;
         if (nextSpawn <= 0) {
-          spawnObstacle(5.2);
-          nextSpawn = THREE.MathUtils.randFloat(0.86, 1.48) * Math.max(0.72, 5.0 / speed);
+          spawnObstacle(5.6);
+          nextSpawn = THREE.MathUtils.randFloat(0.72, 1.2) * Math.max(0.6, 6.5 / speed);
         }
 
         for (let i = obstacles.length - 1; i >= 0; i--) {
@@ -750,7 +761,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
           overflow: hidden;
           background: radial-gradient(circle at 18% 18%, rgba(255, 175, 237, 0.9), transparent 32%), radial-gradient(circle at 82% 12%, rgba(160, 225, 255, 0.9), transparent 34%), radial-gradient(circle at 50% 100%, rgba(206, 177, 255, 0.75), transparent 42%), linear-gradient(180deg, #fff8ff 0%, #f4fbff 52%, #fff0fb 100%);
         }
-        .cosmicRunnerCanvas { position: absolute; inset: 0; }
+        .cosmicRunnerCanvas { position: absolute; inset: 0; contain: strict; }
         .cosmicRunnerHud {
           position: fixed;
           top: max(14px, env(safe-area-inset-top));
@@ -766,8 +777,8 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         .cosmicRunnerGlass {
           border: 1px solid rgba(255, 255, 255, 0.76);
           background: rgba(255, 255, 255, 0.42);
-          backdrop-filter: blur(18px);
-          -webkit-backdrop-filter: blur(18px);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
           border-radius: 22px;
           box-shadow: 0 14px 46px rgba(168, 100, 220, 0.18);
           color: #75468f;
@@ -819,8 +830,8 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   border: 0;
   padding: 0;
   background: rgba(255, 248, 255, 0.86);
-  backdrop-filter: blur(70px) saturate(0.55) brightness(1.12);
-  -webkit-backdrop-filter: blur(70px) saturate(0.55) brightness(1.12);
+  backdrop-filter: blur(8px) saturate(0.72) brightness(1.08);
+  -webkit-backdrop-filter: blur(8px) saturate(0.72) brightness(1.08);
 }
         .cosmicRunnerLeaderboard {
           position: fixed;
