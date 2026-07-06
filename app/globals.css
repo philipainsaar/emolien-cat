@@ -2142,3 +2142,65 @@ html[lang="it"] .shoppingIntroText span {
   text-align: center !important;
   pointer-events: none !important;
 }
+
+/* Final stageMission title + mini globe stack: keep Real Blur, move the globe close below the title. */
+:root {
+  --stage-mission-title-top: 1rem;
+  --stage-mission-globe-top: 3.95rem;
+}
+
+.missionGalleryTitleBar {
+  position: fixed !important;
+  top: var(--stage-mission-title-top) !important;
+  left: 50% !important;
+  z-index: 1006 !important;
+  width: min(90vw, 560px) !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+  pointer-events: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.missionGalleryTitleBar span {
+  display: block !important;
+  width: 100% !important;
+  color: var(--purple-deep) !important;
+  font-family: var(--font-display) !important;
+  font-size: clamp(0.78rem, 1.58vw, 1.02rem) !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.08em !important;
+  line-height: 1.18 !important;
+  text-align: center !important;
+  white-space: pre-line !important;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.92) !important;
+}
+
+.collectionMiniGlobeOverlay {
+  position: fixed !important;
+  top: var(--stage-mission-globe-top) !important;
+  left: 50% !important;
+  z-index: 1005 !important;
+  width: min(118px, 22vw) !important;
+  height: min(118px, 22vw) !important;
+  transform: translateX(-50%) !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 520px) {
+  :root {
+    --stage-mission-title-top: 1rem;
+    --stage-mission-globe-top: 3.75rem;
+  }
+
+  .collectionMiniGlobeOverlay {
+    width: min(102px, 26vw) !important;
+    height: min(102px, 26vw) !important;
+  }
+}
