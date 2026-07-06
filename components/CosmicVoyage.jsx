@@ -2004,7 +2004,7 @@ window.addEventListener('keydown', handleIntroKeyDown);
     const resizeBubbleCanvas = () => {
       width = window.innerWidth;
       height = window.innerHeight;
-      const dprLimit = width < 700 ? 1.25 : 1.6;
+      const dprLimit = width < 700 ? 1.0 : 1.25;
       const dpr = Math.min(window.devicePixelRatio || 1, dprLimit);
 
       bubbleCanvas.width = Math.round(width * dpr);
@@ -2108,7 +2108,7 @@ const introMixers = [];
       introCamera.bottom = -viewportHeight / 2;
       introCamera.updateProjectionMatrix();
 
-      const dprLimit = width < 700 ? 1.25 : 1.5;
+      const dprLimit = width < 700 ? 1.0 : 1.25;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprLimit));
       renderer.setSize(width, height, false);
     };
@@ -2583,7 +2583,7 @@ side: source.side ?? THREE.FrontSide,
       powerPreference: 'high-performance',
     });
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.35));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.42;
@@ -2989,7 +2989,7 @@ function CollectionMiniGlobe() {
 
     const resize = () => {
       const size = Math.max(1, canvas.clientWidth || 110);
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.6);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
 
       renderer.setPixelRatio(dpr);
       renderer.setSize(size, size, false);
@@ -3257,7 +3257,7 @@ side: source.side ?? THREE.FrontSide,
       powerPreference: 'high-performance',
     });
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.35));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.42;
@@ -3637,7 +3637,7 @@ side: source.side ?? THREE.FrontSide,
       precision: 'mediump',
     });
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
     renderer.setSize(width, height);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -4325,7 +4325,7 @@ scene.add(pinkWireframeGlobe);
       height = window.innerHeight;
 
       renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio || 1, 1.5),
+        Math.min(window.devicePixelRatio || 1, 1.25),
       );
       renderer.setSize(width, height);
 
