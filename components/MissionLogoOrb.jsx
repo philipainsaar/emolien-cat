@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const LOGO_ORB_IMAGE_URL = "/almostmadeinjapan.png";
+const LOGO_ORB_IMAGE_URL = "/images/almostmadeinjapan.png";
 
 function drawImageCover(ctx, img, x, y, w, h) {
   const imageRatio = img.width / img.height;
