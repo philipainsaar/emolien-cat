@@ -2250,7 +2250,7 @@ html[lang="it"] .shoppingIntroText span {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: min(30vw, 220px);
+  width: min(15vw, 120px);
   aspect-ratio: 1 / 1;
   margin: 0;
   transform: translate(-50%, -50%);
@@ -2274,6 +2274,6 @@ html[lang="it"] .shoppingIntroText span {
   }
 
   .missionImageGrid > .missionLogoOrbWrap {
-    width: min(40vw, 155px);
+    width: min(15vw, 120px);
   }
   }
