@@ -4866,8 +4866,6 @@ if (state.landed) {
             <div className="termHeader missionGalleryTitleBar">
               <span id="missionGalleryTitle">{copy.collectionsTitle}</span>
             </div>
-
-<MissionLogoOrb />
 			  
             <div className="missionGalleryIntro" />
 
@@ -4896,6 +4894,7 @@ if (state.landed) {
             </button>
 
             <div className="missionImageGrid">
+				<MissionLogoOrb />
               {MISSION_LINK_IMAGES.map((item) => {
                 const collectionTitle =
                   copy.collectionNames?.[item.titleKey] || item.title;
