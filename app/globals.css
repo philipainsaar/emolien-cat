@@ -2131,3 +2131,14 @@ html[lang="it"] .shoppingIntroText span {
   object-position: center center !important;
   overflow: visible !important;
 }
+
+.missionGalleryTitleBar {
+  position: fixed !important;
+  top: 1rem !important;   /* very top */
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 1005 !important;
+  width: min(88vw, 520px) !important;
+  text-align: center !important;
+  pointer-events: none !important;
+}
