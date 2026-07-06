@@ -2190,7 +2190,7 @@ html[lang="it"] .shoppingIntroText span {
   width: min(118px, 22vw) !important;
   height: min(118px, 22vw) !important;
   transform: translateX(-50%) !important;
-  pointer-events: none !important;
+  pointer-events: auto !important;
 }
 
 @media (max-width: 520px) {
@@ -2203,4 +2203,16 @@ html[lang="it"] .shoppingIntroText span {
     width: min(102px, 26vw) !important;
     height: min(102px, 26vw) !important;
   }
+}
+
+
+/* Fix: mini globe must stay clickable after moving it under the title. */
+.collectionMiniGlobeOverlay.collectionMiniGlobeGameButton,
+.collectionMiniGlobeGameButton {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.collectionMiniGlobeOverlay.collectionMiniGlobeGameButton .collectionMiniGlobeCanvas {
+  pointer-events: none !important;
 }
