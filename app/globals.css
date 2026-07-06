@@ -2213,3 +2213,20 @@ html[lang="it"] .shoppingIntroText span {
     height: min(102px, 26vw) !important;
   }
 }
+
+
+/* Runner game performance mode: hide and pause the heavy main scene while the game overlay is open. */
+.stage.runnerGameActive .mainExperienceFadeIn,
+.stage.runnerGameActive .pastelBackgroundViewport,
+.stage.runnerGameActive .canvas,
+.stage.runnerGameActive .ui {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.stage.runnerGameActive .pastelBackgroundMotion,
+.stage.runnerGameActive .movingSymbolLayer,
+.stage.runnerGameActive .movingBgSymbol {
+  animation: none !important;
+  filter: none !important;
+}
