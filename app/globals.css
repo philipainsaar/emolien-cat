@@ -1518,7 +1518,7 @@ select,
   letter-spacing: 0.055em;
   text-transform: uppercase;
 
-  color: rgba(139, 167, 180, 0.85);
+  color: rgba(0, 0, 0, 0.85);
   background:
     linear-gradient(
       135deg,
