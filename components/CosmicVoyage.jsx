@@ -1284,8 +1284,8 @@ function createInfinityTriangleWater() {
       uWaterTexture: { value: null },
       uTextureStrength: { value: 0.0 },
 
-      colorA: { value: new THREE.Color('#c8f7ff') },
-      colorB: { value: new THREE.Color('#f7ddff') },
+      colorA: { value: new THREE.Color('#9c3131') },
+      colorB: { value: new THREE.Color('#9c3131') },
     },
     vertexShader: `
       varying vec2 vUv;
