@@ -3917,9 +3917,9 @@ scene.add(pinkWireframeGlobe);
         const boatModel = boatGLTF.scene;
         boatModel.name = 'CosmicBoatModel';
         improveModelQuality(boatModel, renderer, [
-          new THREE.Color(0xaedbff),
-          new THREE.Color(0xcab8ff),
-          new THREE.Color(0xffb7dc),
+        //  new THREE.Color(0xaedbff),
+        //  new THREE.Color(0xcab8ff),
+        //  new THREE.Color(0xffb7dc),
         ]);
 
         const boatBox = fitModel(
