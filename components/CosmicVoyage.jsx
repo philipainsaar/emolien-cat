@@ -3876,10 +3876,10 @@ scene.add(pinkWireframeGlobe);
         const floatRingModel = ringGLTF.scene;
         floatRingModel.name = 'FloatingRingModel';
         improveModelQuality(floatRingModel, renderer, [
-          new THREE.Color(0xffb7dc),
-          new THREE.Color(0xcab8ff),
-          new THREE.Color(0xaedbff),
-          new THREE.Color(0xffffff),
+          // new THREE.Color(0xffb7dc),
+          // new THREE.Color(0xcab8ff),
+          // new THREE.Color(0xaedbff),
+          // new THREE.Color(0xffffff),
         ]);
 
         fitModel(
