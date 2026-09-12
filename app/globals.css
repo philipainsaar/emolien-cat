@@ -992,7 +992,7 @@ select,
     radial-gradient(circle at 20% 15%, rgba(215, 168, 177, 0.90), transparent 32%),
     radial-gradient(circle at 80% 20%, rgba(139, 167, 180, 0.85), transparent 34%),
     radial-gradient(circle at 50% 85%, rgba(143, 120, 184, 0.80), transparent 38%),
-    linear-gradient(135deg, #fff7fd, #eef8ff 45%, #f7edff);
+    linear-gradient(135deg, #414141, #3e3f3f 45%, #828182);
   will-change: opacity;
 }
 
