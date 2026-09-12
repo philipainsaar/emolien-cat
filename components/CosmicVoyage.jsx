@@ -499,11 +499,13 @@ const PUBLIC_IMAGE_PRELOAD_URLS = [
   '/images/covers/emo.png',
   '/images/covers/nature.png',
   '/images/covers/cyber.png',
-  '/images/symbols/pink-star-brooch.png',
-  '/images/symbols/pearl-planet.png',
-  '/images/symbols/fluffy-purple-star.png',
-  '/images/symbols/opal-star.png',
-  '/images/symbols/kawaii-planet.png',
+  '/images/symbols/apple.png',
+  '/images/symbols/ghost.png',
+  '/images/symbols/leaf.png',
+  '/images/symbols/mushroom.png',
+  '/images/symbols/pumpkin.png',
+  '/images/symbols/skull.png',
+  '/images/symbols/star.png',
 ];
 
 // Change either value to Math.PI if a model faces backward after export.
@@ -587,11 +589,13 @@ const MISSION_LINK_IMAGES = [
                                                                 ];
 
 const MOVING_BG_SYMBOLS = [
-  '/images/symbols/pink-star-brooch.png',
-  '/images/symbols/pearl-planet.png',
-  '/images/symbols/fluffy-purple-star.png',
-  '/images/symbols/opal-star.png',
-  '/images/symbols/kawaii-planet.png',
+  '/images/symbols/apple.png',
+  '/images/symbols/ghost.png',
+  '/images/symbols/leaf.png',
+  '/images/symbols/mushroom.png',
+  '/images/symbols/pumpkin.png',
+  '/images/symbols/skull.png',
+  '/images/symbols/star.png',
 ];
 
 // Maximum total symbols across all 5 images.
