@@ -1083,12 +1083,12 @@ function createUltraFastWater() {
   const basePositions = waterPositions.array.slice();
 
   const waterColors = new Float32Array(waterPositions.count * 3);
-  const cyan = new THREE.Color('#4ffaff');
-  const deepCyan = new THREE.Color('#00d8ff');
-  const pink = new THREE.Color('#ff5eea');
-  const softPink = new THREE.Color('#ffd6f5');
+  const cyan = new THREE.Color('#a57254');
+  const deepCyan = new THREE.Color('#a57254');
+  const pink = new THREE.Color('#9c3131');
+  const softPink = new THREE.Color('#4a1e2a');
   const lavender = new THREE.Color('#a98cff');
-  const whiteFoam = new THREE.Color('#ffffff');
+  const whiteFoam = new THREE.Color('#000000');
   const mixedColor = new THREE.Color();
 
   for (let i = 0; i < waterPositions.count; i += 1) {
