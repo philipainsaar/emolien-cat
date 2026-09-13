@@ -598,43 +598,165 @@ const MOVING_BG_SYMBOLS = [
   '/images/symbols/star.png',
 ];
 
-// Maximum total symbols across all 5 images.
-const TOTAL_MOVING_SYMBOLS = 30;
+// Total number of symbols in the background.
+const TOTAL_MOVING_SYMBOLS = 34;
+
+// Pattern layout.
+const SYMBOL_COLUMNS = 5;
+const SYMBOL_ROWS = 8;
+
+// Keep symbols away from the absolute edges.
+const EDGE_PADDING_X = 6;
+const EDGE_PADDING_Y = 4;
+
+// Random movement allowed inside each grid cell.
+// Lower = cleaner / more ordered.
+// Higher = more chaotic.
+const JITTER_X = 22;
+const JITTER_Y = 22;
+
+// Size range in px.
+const MIN_SYMBOL_SIZE = 30;
+const MAX_SYMBOL_SIZE = 52;
+
+// Prevent immediately repeating the same symbol.
+function getRandomSymbol(previousSrc = null) {
+  const choices = MOVING_BG_SYMBOLS.filter(
+    (src) => src !== previousSrc
+  );
+
+  return choices[Math.floor(Math.random() * choices.length)];
+}
+
+function randomBetween(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function shuffleArray(array) {
+  const copy = [...array];
+
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+
+  return copy;
+}
 
 function createMovingBackgroundSymbols() {
-  const columns = 6;
-  const rows = 6;
+  const usableWidth = 100 - EDGE_PADDING_X * 2;
+  const usableHeight = 100 - EDGE_PADDING_Y * 2;
+
+  const cellWidth = usableWidth / SYMBOL_COLUMNS;
+  const cellHeight = usableHeight / SYMBOL_ROWS;
 
   const slots = [];
 
-  for (let row = 0; row < rows; row += 1) {
-    for (let column = 0; column < columns; column += 1) {
-      slots.push({ row, column });
+  // Create evenly distributed slots covering the ENTIRE background.
+  for (let row = 0; row < SYMBOL_ROWS; row += 1) {
+    for (let column = 0; column < SYMBOL_COLUMNS; column += 1) {
+      slots.push({
+        row,
+        column,
+      });
     }
   }
 
-  // Shuffle the grid cells so the five symbol types feel random,
-  // while still keeping enough spacing between every emblem.
-  for (let i = slots.length - 1; i > 0; i -= 1) {
-    const swapIndex = Math.floor(Math.random() * (i + 1));
-    [slots[i], slots[swapIndex]] = [slots[swapIndex], slots[i]];
+  const randomizedSlots = shuffleArray(slots);
+
+  const symbols = [];
+  let previousSrc = null;
+
+  for (
+    let index = 0;
+    index < Math.min(TOTAL_MOVING_SYMBOLS, randomizedSlots.length);
+    index += 1
+  ) {
+    const slot = randomizedSlots[index];
+
+    /*
+      Center of this grid cell.
+
+      Because each symbol gets its own cell, symbols can never
+      pile directly on top of one another.
+    */
+    const centerX =
+      EDGE_PADDING_X +
+      slot.column * cellWidth +
+      cellWidth / 2;
+
+    const centerY =
+      EDGE_PADDING_Y +
+      slot.row * cellHeight +
+      cellHeight / 2;
+
+    /*
+      Add controlled randomness.
+
+      Jitter is expressed as a percentage of the cell dimensions,
+      so it stays proportional on different screen sizes.
+    */
+    const jitterX =
+      (Math.random() - 0.5) *
+      cellWidth *
+      (JITTER_X / 100);
+
+    const jitterY =
+      (Math.random() - 0.5) *
+      cellHeight *
+      (JITTER_Y / 100);
+
+    /*
+      Offset every second row slightly.
+
+      This avoids the pattern looking like a rigid spreadsheet.
+      It gives the background more of a scattered wallpaper feel.
+    */
+    const staggerX =
+      slot.row % 2 === 0
+        ? 0
+        : cellWidth * randomBetween(-0.12, 0.12);
+
+    const src = getRandomSymbol(previousSrc);
+    previousSrc = src;
+
+    symbols.push({
+      id: `symbol-${index}`,
+      src,
+
+      x: Math.max(
+        EDGE_PADDING_X,
+        Math.min(
+          100 - EDGE_PADDING_X,
+          centerX + jitterX + staggerX
+        )
+      ),
+
+      y: Math.max(
+        EDGE_PADDING_Y,
+        Math.min(
+          100 - EDGE_PADDING_Y,
+          centerY + jitterY
+        )
+      ),
+
+      size: randomBetween(
+        MIN_SYMBOL_SIZE,
+        MAX_SYMBOL_SIZE
+      ),
+
+      opacity: randomBetween(0.48, 0.78),
+
+      // Useful if you want each one rotated slightly too.
+      rotation: randomBetween(-18, 18),
+
+      // Useful for independently animated movement.
+      animationDelay: randomBetween(0, 8),
+      animationDuration: randomBetween(18, 32),
+    });
   }
 
-  return slots.slice(0, TOTAL_MOVING_SYMBOLS).map((slot, index) => {
-    const cellWidth = 100 / columns;
-
-    // Keep the whole symbol field mostly in the upper part of the art.
-    const yRows = [6, 15, 25, 37, 51, 66];
-
-    return {
-      id: `symbol-${index}`,
-      src: MOVING_BG_SYMBOLS[index % MOVING_BG_SYMBOLS.length],
-      x: slot.column * cellWidth + cellWidth * 0.5 + (Math.random() * 6 - 3),
-      y: yRows[slot.row] + (Math.random() * 4 - 2),
-      size: 36 + Math.random() * 28,
-      opacity: 0.52 + Math.random() * 0.28,
-    };
-  });
+  return symbols;
 }
 
 function createFluffSpriteTexture() {
