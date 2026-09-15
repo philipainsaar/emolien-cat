@@ -4562,41 +4562,7 @@ scene.add(pinkWireframeGlobe);
     //const clock = new THREE.Clock();
     //let elapsed = 0;
 
-    //const lerp = (from, to, amount) =>
-    const clock = new THREE.Clock();
-let elapsed = 0;
-
-// ==========================================
-// WATER PERFORMANCE
-// ==========================================
-
-const isMobileWater =
-  window.innerWidth < 768 ||
-  window.matchMedia?.('(pointer: coarse)').matches;
-
-// ONE reusable color instead of creating thousands every frame.
-const animatedWaterColor = new THREE.Color();
-
-// Cache references so we don't repeatedly dig through objects.
-const waterGeometry = pastelWater.water.geometry;
-const waterPositionAttr = pastelWater.waterPositions;
-const waterPositionArray = waterPositionAttr.array;
-const waterBaseArray = pastelWater.basePositions;
-const waterColorAttr = waterGeometry.attributes.color;
-const waterColorArray = waterColorAttr.array;
-const waterVertexCount = waterPositionAttr.count;
-
-let waterFrame = 0;
-
-// Phone: wave geometry/colors update ~30 fps.
-// Desktop: update every rendered frame.
-const WATER_FRAME_STEP = isMobileWater ? 2 : 1;
-
-// Phone: expensive normal recalculation ~15 fps.
-// Desktop: every water update.
-const WATER_NORMAL_STEP = isMobileWater ? 4 : 1;
-
-const lerp = (from, to, amount) =>
+    const lerp = (from, to, amount) =>
       from + (to - from) * amount;
 
     const easeOutCubic = (value) =>
