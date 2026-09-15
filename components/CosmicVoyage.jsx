@@ -473,10 +473,27 @@ const getDocumentLangCode = (languageCode) => {
 };
 
 
+//const CORE_MODEL_PRELOAD_URLS = [
+//  CAT_MODEL_URL,
+//  BOAT_MODEL_URL,
+//  FLOAT_RING_MODEL_URL,
+//];
+
+const INTRO_MODEL_PRELOAD_URLS = [
+  CAT_MODEL_SHOPPING_URL,
+];
+
 const CORE_MODEL_PRELOAD_URLS = [
   CAT_MODEL_URL,
   BOAT_MODEL_URL,
+];
+
+const DEFERRED_MODEL_PRELOAD_URLS = [
   FLOAT_RING_MODEL_URL,
+  FLOAT_RING_FALLBACK_MODEL_URL,
+  SPARKLE_HEART_MODEL_URL,
+  '/models/galaxy-bag.glb',
+  '/models/pastel-looping-animated-water.glb',
 ];
 
 // These are all the GLB files currently shipped in /public/models.
@@ -2176,7 +2193,7 @@ window.addEventListener('keydown', handleIntroKeyDown);
     const renderer = new THREE.WebGLRenderer({
       canvas: catCanvas,
       alpha: true,
-      antialias: false,
+      antialias: true,
       powerPreference: 'high-performance',
     });
     renderer.setClearColor(0x000000, 0);
@@ -2265,8 +2282,11 @@ const introMixers = [];
       introCamera.bottom = -viewportHeight / 2;
       introCamera.updateProjectionMatrix();
 
-      const dprLimit = width < 700 ? 1.0 : 1.25;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprLimit));
+const dprLimit = width < 768 ? 1.5 : 1.5;
+
+renderer.setPixelRatio(
+  Math.min(window.devicePixelRatio || 1, dprLimit)
+);
       renderer.setSize(width, height, false);
     };
 
@@ -3792,16 +3812,36 @@ side: source.side ?? THREE.FrontSide,
 
     THREE.Cache.enabled = true;
 
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: false,
-      alpha: true,
-      powerPreference: 'high-performance',
-      precision: 'mediump',
-    });
+    // const renderer = new THREE.WebGLRenderer({
+    //  canvas,
+    //  antialias: false,
+    //  alpha: true,
+    //  powerPreference: 'high-performance',
+    //  precision: 'mediump',
+    //});
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
-    renderer.setSize(width, height);
+    //renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+    // renderer.setSize(width, height);
+
+    const isMobile =
+  window.innerWidth < 768 ||
+  window.matchMedia?.('(pointer: coarse)').matches;
+
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: true,
+  alpha: true,
+  powerPreference: 'high-performance',
+});
+
+const maxDpr = isMobile ? 1.5 : 1.5;
+
+renderer.setPixelRatio(
+  Math.min(window.devicePixelRatio || 1, maxDpr)
+);
+
+renderer.setSize(width, height);
+
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
