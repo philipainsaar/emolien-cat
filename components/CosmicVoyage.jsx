@@ -5011,7 +5011,7 @@ if (state.landed) {
             requestSiteMusic('stop', RUNNER_GAME_MUSIC_FILE, { reset: true });
             setRunnerGameOpen(false);
           }}
-          modelPath={CAT_MODEL_URL}
+          modelPath={CAT_MODEL_SHOPPING_URL}
         />
       )}
 	          
