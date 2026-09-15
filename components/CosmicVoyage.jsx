@@ -1432,8 +1432,8 @@ function createInfinityTriangleWater() {
 
   const vertices = new Float32Array([
     // Wide near edge, hidden underneath the old opaque waves.
-    -35.0, 0.0, 15.0,
-     35.0, 0.0, 15.0,
+    -35.0, 0.0, 0.0,
+     35.0, 0.0, 0.0,
 
     // Slightly longer infinity tip with soft fade-out.
       0.0, 30.0, -600.0,
@@ -1550,7 +1550,7 @@ function createInfinityTriangleWater() {
 
   // Same floor level as the water, but far behind the boat.
   // The old opaque waves cover the near edge, so it only appears after them.
-  triangle.position.set(0, -1.44, -10.0);
+  triangle.position.set(0, -1.34, -10.0);
   triangle.renderOrder = -100000;
   triangle.frustumCulled = false;
 
