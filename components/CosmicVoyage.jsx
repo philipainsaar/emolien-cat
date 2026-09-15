@@ -4559,8 +4559,8 @@ scene.add(pinkWireframeGlobe);
 
     window.addEventListener('resize', onResize);
 
-    //const clock = new THREE.Clock();
-    //let elapsed = 0;
+    const clock = new THREE.Clock();
+    let elapsed = 0;
 
     const lerp = (from, to, amount) =>
       from + (to - from) * amount;
