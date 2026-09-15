@@ -1276,11 +1276,21 @@ function createUltraFastWater() {
     waterColors[i * 3 + 2] = mixedColor.b;
   }
 
+  //geometry.setAttribute(
+  //  'color',
+  //  new THREE.BufferAttribute(waterColors, 3),
+  //);
+  //geometry.computeVertexNormals();
   geometry.setAttribute(
-    'color',
-    new THREE.BufferAttribute(waterColors, 3),
-  );
-  geometry.computeVertexNormals();
+  'color',
+  new THREE.BufferAttribute(waterColors, 3),
+);
+
+// Tell Three.js these buffers change constantly.
+waterPositions.setUsage(THREE.DynamicDrawUsage);
+geometry.attributes.color.setUsage(THREE.DynamicDrawUsage);
+
+geometry.computeVertexNormals();
 
   const material = new THREE.MeshStandardMaterial({
     color: 0xffffff,
@@ -1422,8 +1432,8 @@ function createInfinityTriangleWater() {
 
   const vertices = new Float32Array([
     // Wide near edge, hidden underneath the old opaque waves.
-    -35.0, 0.0, 0.0,
-     35.0, 0.0, 0.0,
+    -35.0, 0.0, 5.0,
+     35.0, 0.0, 5.0,
 
     // Slightly longer infinity tip with soft fade-out.
       0.0, 30.0, -600.0,
@@ -4549,10 +4559,44 @@ scene.add(pinkWireframeGlobe);
 
     window.addEventListener('resize', onResize);
 
-    const clock = new THREE.Clock();
-    let elapsed = 0;
+    //const clock = new THREE.Clock();
+    //let elapsed = 0;
 
-    const lerp = (from, to, amount) =>
+    //const lerp = (from, to, amount) =>
+    const clock = new THREE.Clock();
+let elapsed = 0;
+
+// ==========================================
+// WATER PERFORMANCE
+// ==========================================
+
+const isMobileWater =
+  window.innerWidth < 768 ||
+  window.matchMedia?.('(pointer: coarse)').matches;
+
+// ONE reusable color instead of creating thousands every frame.
+const animatedWaterColor = new THREE.Color();
+
+// Cache references so we don't repeatedly dig through objects.
+const waterGeometry = pastelWater.water.geometry;
+const waterPositionAttr = pastelWater.waterPositions;
+const waterPositionArray = waterPositionAttr.array;
+const waterBaseArray = pastelWater.basePositions;
+const waterColorAttr = waterGeometry.attributes.color;
+const waterColorArray = waterColorAttr.array;
+const waterVertexCount = waterPositionAttr.count;
+
+let waterFrame = 0;
+
+// Phone: wave geometry/colors update ~30 fps.
+// Desktop: update every rendered frame.
+const WATER_FRAME_STEP = isMobileWater ? 2 : 1;
+
+// Phone: expensive normal recalculation ~15 fps.
+// Desktop: every water update.
+const WATER_NORMAL_STEP = isMobileWater ? 4 : 1;
+
+const lerp = (from, to, amount) =>
       from + (to - from) * amount;
 
     const easeOutCubic = (value) =>
@@ -4598,63 +4642,159 @@ pinkWireframeGlobe.rotation.z =
       floatRingGroup.rotation.z = Math.sin(elapsed * 2.1) * 0.055;
       floatRingGlow.intensity = 1.55 + Math.sin(elapsed * 3.2) * 0.28;
 
+// ======================================================
+// OPTIMIZED ANIMATED FOREGROUND WATER
+// ======================================================
 
-      // Smooth high waves with animated vertex colors.
-      // PlaneGeometry lies in local X/Y, so wave height is local Z after rotation.
-      const colorAttr = pastelWater.water.geometry.attributes.color;
+waterFrame += 1;
 
-      for (let i = 0; i < pastelWater.waterPositions.count; i += 1) {
-        const x = pastelWater.basePositions[i * 3];
-        const y = pastelWater.basePositions[i * 3 + 1];
+const shouldUpdateWater =
+  waterFrame % WATER_FRAME_STEP === 0;
 
-        const longWave =
-          Math.sin(x * 0.18 + elapsed * 2.55) * 0.50;
-        const crossWave =
-          Math.cos(y * 0.16 + elapsed * 2.15) * 0.36;
-        const diagonalWave =
-          Math.sin((x + y) * 0.085 + elapsed * 3.2) * 0.22;
-        const smallTide =
-          Math.cos((x - y) * 0.12 + elapsed * 4.1) * 0.12;
+if (shouldUpdateWater) {
+  // Calculate these ONCE per water update,
+  // rather than again for every vertex.
+  const longWaveTime = elapsed * 2.55;
+  const crossWaveTime = elapsed * 2.15;
+  const diagonalWaveTime = elapsed * 3.2;
+  const smallTideTime = elapsed * 4.1;
 
-        const height =
-          longWave +
-          crossWave +
-          diagonalWave +
-          smallTide;
+  const ribbonATime = elapsed * 0.9;
+  const ribbonBTime = elapsed * 0.7;
+  const ribbonCTime = elapsed * 1.15;
 
-        pastelWater.waterPositions.array[i * 3 + 2] = height;
+  for (let i = 0; i < waterVertexCount; i += 1) {
+    const index3 = i * 3;
 
-        const crest = THREE.MathUtils.clamp(
-          (height + 0.75) / 1.65,
-          0,
-          1,
-        );
+    const x = waterBaseArray[index3];
+    const y = waterBaseArray[index3 + 1];
 
-        const ribbonA =
-          (Math.sin(x * 0.105 + elapsed * 0.9) + 1) * 0.5;
-        const ribbonB =
-          (Math.cos(y * 0.115 - elapsed * 0.7) + 1) * 0.5;
-        const ribbonC =
-          (Math.sin((x + y) * 0.06 + elapsed * 1.15) + 1) * 0.5;
+    // ------------------------------------------
+    // WAVES
+    // ------------------------------------------
 
-        const c = new THREE.Color();
+    const longWave =
+      Math.sin(x * 0.18 + longWaveTime) * 0.50;
 
-        c.copy(pastelWater.deepCyan)
-          .lerp(pastelWater.cyan, crest * 0.65)
-          .lerp(pastelWater.pink, ribbonA * 0.42)
-          .lerp(pastelWater.lavender, ribbonB * 0.34)
-          .lerp(pastelWater.softPink, ribbonC * 0.20)
-          .lerp(pastelWater.whiteFoam, Math.max(0, crest - 0.72) * 0.75);
+    const crossWave =
+      Math.cos(y * 0.16 + crossWaveTime) * 0.36;
 
-        colorAttr.array[i * 3] = c.r;
-        colorAttr.array[i * 3 + 1] = c.g;
-        colorAttr.array[i * 3 + 2] = c.b;
-      }
+    const diagonalWave =
+      Math.sin(
+        (x + y) * 0.085 +
+        diagonalWaveTime
+      ) * 0.22;
 
-      pastelWater.waterPositions.needsUpdate = true;
-      colorAttr.needsUpdate = true;
-      pastelWater.water.geometry.computeVertexNormals();
-      pastelWater.water.rotation.z = Math.sin(elapsed * 0.8) * 0.006;
+    const smallTide =
+      Math.cos(
+        (x - y) * 0.12 +
+        smallTideTime
+      ) * 0.12;
+
+    const height =
+      longWave +
+      crossWave +
+      diagonalWave +
+      smallTide;
+
+    waterPositionArray[index3 + 2] = height;
+
+    // ------------------------------------------
+    // CREST
+    // Faster manual clamp
+    // ------------------------------------------
+
+    let crest = (height + 0.75) / 1.65;
+
+    if (crest < 0) {
+      crest = 0;
+    } else if (crest > 1) {
+      crest = 1;
+    }
+
+    // ------------------------------------------
+    // COLOR RIBBONS
+    // ------------------------------------------
+
+    const ribbonA =
+      (Math.sin(
+        x * 0.105 +
+        ribbonATime
+      ) + 1) * 0.5;
+
+    const ribbonB =
+      (Math.cos(
+        y * 0.115 -
+        ribbonBTime
+      ) + 1) * 0.5;
+
+    const ribbonC =
+      (Math.sin(
+        (x + y) * 0.06 +
+        ribbonCTime
+      ) + 1) * 0.5;
+
+    // IMPORTANT:
+    // Reuse ONE THREE.Color instead of:
+    //
+    // const c = new THREE.Color();
+    //
+    // for every vertex.
+
+    animatedWaterColor
+      .copy(pastelWater.deepCyan)
+      .lerp(
+        pastelWater.cyan,
+        crest * 0.65,
+      )
+      .lerp(
+        pastelWater.pink,
+        ribbonA * 0.42,
+      )
+      .lerp(
+        pastelWater.lavender,
+        ribbonB * 0.34,
+      )
+      .lerp(
+        pastelWater.softPink,
+        ribbonC * 0.20,
+      )
+      .lerp(
+        pastelWater.whiteFoam,
+        Math.max(0, crest - 0.72) * 0.75,
+      );
+
+    waterColorArray[index3] =
+      animatedWaterColor.r;
+
+    waterColorArray[index3 + 1] =
+      animatedWaterColor.g;
+
+    waterColorArray[index3 + 2] =
+      animatedWaterColor.b;
+  }
+
+  // Send changed buffers to GPU.
+  waterPositionAttr.needsUpdate = true;
+  waterColorAttr.needsUpdate = true;
+
+  // Recalculating normals is one of the expensive parts.
+  //
+  // Desktop: every update.
+  // Mobile: once every 4 rendered frames.
+  if (
+    !isMobileWater ||
+    waterFrame % WATER_NORMAL_STEP === 0
+  ) {
+    waterGeometry.computeVertexNormals();
+  }
+}
+
+// Keep this tiny motion at full rendering FPS.
+// It costs almost nothing.
+pastelWater.water.rotation.z =
+  Math.sin(elapsed * 0.8) * 0.006;
+
 
       if (state.launching) {
         state.launchElapsed = Math.min(
