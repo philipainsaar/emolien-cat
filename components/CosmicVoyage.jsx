@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import CosmicRunnerOverlay from "./CosmicRunnerOverlay";
+
 import MissionLogoOrb from "./MissionLogoOrb";
 
 const CAT_MODEL_URL = '/models/alien-cat.glb';
@@ -473,74 +473,11 @@ const getDocumentLangCode = (languageCode) => {
 };
 
 
-// -----------------------------------------------------------------------------
-// Mobile performance helpers
-// -----------------------------------------------------------------------------
-// The visual design is intentionally left intact. These helpers only reduce
-// invisible GPU/CPU overhead and lower the INTERNAL render resolution when a
-// phone proves that it cannot sustain the scene smoothly.
-function getRuntimePerformanceProfile() {
-  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
-    return {
-      isMobile: false,
-      lowEndMobile: false,
-      deviceMemory: 0,
-      hardwareConcurrency: 0,
-      saveData: false,
-    };
-  }
-
-  const isMobile =
-    window.innerWidth < 768 ||
-    window.matchMedia?.('(pointer: coarse)').matches === true;
-
-  const deviceMemory = Number(navigator.deviceMemory || 0);
-  const hardwareConcurrency = Number(navigator.hardwareConcurrency || 0);
-  const saveData = navigator.connection?.saveData === true;
-
-  // These are only STARTING hints. Actual frame rate below is the final judge,
-  // which is important for iPhones/Safari where deviceMemory is unavailable.
-  const lowEndMobile = isMobile && (
-    saveData ||
-    (deviceMemory > 0 && deviceMemory <= 4) ||
-    (hardwareConcurrency > 0 && hardwareConcurrency <= 4)
-  );
-
-  return {
-    isMobile,
-    lowEndMobile,
-    deviceMemory,
-    hardwareConcurrency,
-    saveData,
-  };
-}
-
-function createInstancedSparkleField(name, count, geometry, material) {
-  const stars = new THREE.InstancedMesh(geometry, material, count);
-  stars.name = name;
-  stars.frustumCulled = false;
-  stars.instanceMatrix.setUsage(THREE.StaticDrawUsage);
-
-  const dummy = new THREE.Object3D();
-
-  for (let i = 0; i < count; i += 1) {
-    dummy.position.set(
-      (Math.random() - 0.5) * 12,
-      (Math.random() - 0.5) * 8,
-      -4 - Math.random() * 4,
-    );
-
-    const scale = 0.6 + Math.random() * 2.2;
-    dummy.scale.setScalar(scale);
-    dummy.rotation.set(0, 0, 0);
-    dummy.updateMatrix();
-    stars.setMatrixAt(i, dummy.matrix);
-  }
-
-  stars.instanceMatrix.needsUpdate = true;
-  return stars;
-}
-
+//const CORE_MODEL_PRELOAD_URLS = [
+//  CAT_MODEL_URL,
+//  BOAT_MODEL_URL,
+//  FLOAT_RING_MODEL_URL,
+//];
 
 const INTRO_MODEL_PRELOAD_URLS = [
   CAT_MODEL_SHOPPING_URL,
@@ -559,6 +496,18 @@ const DEFERRED_MODEL_PRELOAD_URLS = [
   '/models/pastel-looping-animated-water.glb',
 ];
 
+// These are all the GLB files currently shipped in /public/models.
+// Cat + boat are highest priority because the main scene needs them first.
+const ALL_PUBLIC_GLB_PRELOAD_URLS = [
+  CAT_MODEL_URL,
+  BOAT_MODEL_URL,
+  FLOAT_RING_MODEL_URL,
+  FLOAT_RING_FALLBACK_MODEL_URL,
+  SPARKLE_HEART_MODEL_URL,
+  '/models/galaxy-bag.glb',
+  '/models/pastel-looping-animated-water.glb',
+];
+
 const PUBLIC_IMAGE_PRELOAD_URLS = [
   '/images/pastel-sky.jpg',
   '/images/pastel-sky.png',
@@ -568,11 +517,13 @@ const PUBLIC_IMAGE_PRELOAD_URLS = [
   '/images/covers/emo.png',
   '/images/covers/nature.png',
   '/images/covers/cyber.png',
-  '/images/symbols/pink-star-brooch.png',
-  '/images/symbols/pearl-planet.png',
-  '/images/symbols/fluffy-purple-star.png',
-  '/images/symbols/opal-star.png',
-  '/images/symbols/kawaii-planet.png',
+  '/images/symbols/apple.png',
+  '/images/symbols/ghost.png',
+  '/images/symbols/leaf.png',
+  '/images/symbols/mushroom.png',
+  '/images/symbols/pumpkin.png',
+  '/images/symbols/skull.png',
+  '/images/symbols/star.png',
 ];
 
 // Change either value to Math.PI if a model faces backward after export.
@@ -656,50 +607,202 @@ const MISSION_LINK_IMAGES = [
                                                                 ];
 
 const MOVING_BG_SYMBOLS = [
-  '/images/symbols/pink-star-brooch.png',
-  '/images/symbols/pearl-planet.png',
-  '/images/symbols/fluffy-purple-star.png',
-  '/images/symbols/opal-star.png',
-  '/images/symbols/kawaii-planet.png',
+  '/images/symbols/apple.png',
+  '/images/symbols/ghost.png',
+  '/images/symbols/leaf.png',
+  '/images/symbols/mushroom.png',
+  '/images/symbols/pumpkin.png',
+  '/images/symbols/skull.png',
+  '/images/symbols/star.png',
 ];
 
-// Maximum total symbols across all 5 images.
-const TOTAL_MOVING_SYMBOLS = 30;
+/*
+  The moving background itself is 260vw wide.
+
+  13 columns across 260vw gives roughly 5 columns per visible
+  100vw screen, which works much better than the old 6 columns.
+*/
+const MOVING_SYMBOL_COLUMNS = 13;
+const MOVING_SYMBOL_ROWS = 5;
+
+const TOTAL_MOVING_SYMBOLS =
+  MOVING_SYMBOL_COLUMNS * MOVING_SYMBOL_ROWS;
+
+function randomBetween(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function randomItem(items) {
+  return items[Math.floor(Math.random() * items.length)];
+}
 
 function createMovingBackgroundSymbols() {
-  const columns = 6;
-  const rows = 6;
+  const columns = MOVING_SYMBOL_COLUMNS;
+  const rows = MOVING_SYMBOL_ROWS;
 
-  const slots = [];
+  const cellWidth = 100 / columns;
+  const cellHeight = 100 / rows;
+
+  /*
+    Remember which symbol was placed in every cell.
+
+    This lets us stop identical symbols from sitting directly
+    beside / above one another.
+  */
+  const placedTypes = Array.from(
+    { length: rows },
+    () => Array(columns).fill(null),
+  );
+
+  const symbols = [];
 
   for (let row = 0; row < rows; row += 1) {
     for (let column = 0; column < columns; column += 1) {
-      slots.push({ row, column });
+      /*
+        Avoid matching the closest neighboring symbols.
+
+        This makes the pattern feel genuinely mixed rather than
+        apple/apple/apple or skull/skull clusters.
+      */
+      const blockedTypes = new Set([
+        placedTypes[row]?.[column - 1],
+        placedTypes[row - 1]?.[column],
+        placedTypes[row - 1]?.[column - 1],
+        placedTypes[row - 1]?.[column + 1],
+      ]);
+
+      blockedTypes.delete(null);
+      blockedTypes.delete(undefined);
+
+      const availableTypes = MOVING_BG_SYMBOLS.filter(
+        (src) => !blockedTypes.has(src),
+      );
+
+      const src = randomItem(
+        availableTypes.length
+          ? availableTypes
+          : MOVING_BG_SYMBOLS,
+      );
+
+      placedTypes[row][column] = src;
+
+      /*
+        Start at the exact center of the cell.
+      */
+      const baseX =
+        column * cellWidth +
+        cellWidth * 0.5;
+
+      const baseY =
+        row * cellHeight +
+        cellHeight * 0.5;
+
+      /*
+        Organic randomness, but deliberately restricted.
+
+        The previous layout allowed the pattern to feel patchy.
+        Here each icon can wander within its own neighborhood
+        without invading the next symbol's space.
+      */
+      const jitterX =
+        randomBetween(-0.21, 0.21) *
+        cellWidth;
+
+      const jitterY =
+        randomBetween(-0.17, 0.17) *
+        cellHeight;
+
+      /*
+        Tiny row staggering breaks the visible grid structure.
+
+        Alternating directions stops everything forming diagonal
+        railroad tracks.
+      */
+      const rowStagger =
+        row % 2 === 0
+          ? cellWidth * 0.08
+          : -cellWidth * 0.08;
+
+      let x =
+        baseX +
+        jitterX +
+        rowStagger;
+
+      let y =
+        baseY +
+        jitterY;
+
+      /*
+        Keep first / last rows away from clipping.
+      */
+      x = Math.max(1.5, Math.min(98.5, x));
+      y = Math.max(7, Math.min(93, y));
+
+      /*
+        Depth variation.
+
+        Most symbols stay medium-small, with occasional larger
+        foreground charms. This looks less like a tiled pattern.
+      */
+      const depth = Math.random();
+
+      let size;
+
+      if (depth < 0.15) {
+        // Occasional larger foreground symbol.
+        size = randomBetween(45, 53);
+      } else if (depth < 0.48) {
+        // Smaller distant symbols.
+        size = randomBetween(28, 35);
+      } else {
+        // Main pattern size.
+        size = randomBetween(35, 44);
+      }
+
+      const opacity =
+        depth < 0.15
+          ? randomBetween(0.68, 0.82)
+          : depth < 0.48
+            ? randomBetween(0.42, 0.58)
+            : randomBetween(0.55, 0.72);
+
+      /*
+        Independent animation timing prevents the symbols from
+        breathing / flashing together.
+      */
+      const floatDuration =
+        randomBetween(17, 31);
+
+      const flashDuration =
+        randomBetween(0.82, 1.65);
+
+      const flashDelay =
+        -randomBetween(0, 2.6);
+
+      const floatDirection =
+        Math.random() > 0.5
+          ? 'alternate'
+          : 'alternate-reverse';
+
+      symbols.push({
+        id: `symbol-${row}-${column}`,
+        src,
+
+        x,
+        y,
+
+        size,
+        opacity,
+
+        floatDuration,
+        flashDuration,
+        flashDelay,
+        floatDirection,
+      });
     }
   }
 
-  // Shuffle the grid cells so the five symbol types feel random,
-  // while still keeping enough spacing between every emblem.
-  for (let i = slots.length - 1; i > 0; i -= 1) {
-    const swapIndex = Math.floor(Math.random() * (i + 1));
-    [slots[i], slots[swapIndex]] = [slots[swapIndex], slots[i]];
-  }
-
-  return slots.slice(0, TOTAL_MOVING_SYMBOLS).map((slot, index) => {
-    const cellWidth = 100 / columns;
-
-    // Keep the whole symbol field mostly in the upper part of the art.
-    const yRows = [6, 15, 25, 37, 51, 66];
-
-    return {
-      id: `symbol-${index}`,
-      src: MOVING_BG_SYMBOLS[index % MOVING_BG_SYMBOLS.length],
-      x: slot.column * cellWidth + cellWidth * 0.5 + (Math.random() * 6 - 3),
-      y: yRows[slot.row] + (Math.random() * 4 - 2),
-      size: 36 + Math.random() * 28,
-      opacity: 0.52 + Math.random() * 0.28,
-    };
-  });
+  return symbols;
 }
 
 function createFluffSpriteTexture() {
@@ -900,11 +1003,7 @@ function addTexturePreservingFluff(root, options = {}) {
 
 
 function improveModelQuality(root, renderer, pastelPalette) {
-  const performanceProfile = getRuntimePerformanceProfile();
-  const hardwareAnisotropy = renderer.capabilities.getMaxAnisotropy();
-  const anisotropy = performanceProfile.lowEndMobile
-    ? Math.min(hardwareAnisotropy, 4)
-    : hardwareAnisotropy;
+  const anisotropy = renderer.capabilities.getMaxAnisotropy();
   const processedMaterials = new Set();
   let meshIndex = 0;
 
@@ -1181,11 +1280,6 @@ function createUltraFastWater() {
     'color',
     new THREE.BufferAttribute(waterColors, 3),
   );
-
-  // These two GPU buffers are rewritten while the water animates.
-  // DynamicDrawUsage lets WebGL upload them through the cheaper streaming path.
-  waterPositions.setUsage(THREE.DynamicDrawUsage);
-  geometry.attributes.color.setUsage(THREE.DynamicDrawUsage);
   geometry.computeVertexNormals();
 
   const material = new THREE.MeshStandardMaterial({
@@ -1200,9 +1294,7 @@ function createUltraFastWater() {
     metalness: 0,
     transparent: false,
     flatShading: false,
-    // The camera only sees the top side of this horizontal plane.
-    // Avoid drawing every water triangle twice.
-    side: THREE.FrontSide,
+    side: THREE.DoubleSide,
   });
 
   const water = new THREE.Mesh(geometry, material);
@@ -1261,14 +1353,9 @@ function createPinkWireframeGlobe() {
     new THREE.SphereGeometry(radius * 0.995, 18, 10),
     bodyMaterial,
   );
-  body.renderOrder = -100001;
-  body.frustumCulled = false;
-  globe.add(body);
 
-  const ringGeometries = [];
-  const transform = new THREE.Matrix4();
-  const rotation = new THREE.Matrix4();
-  const translation = new THREE.Matrix4();
+  body.renderOrder = -100001;
+  globe.add(body);
 
   const latitudeCount = 9;
 
@@ -1276,44 +1363,39 @@ function createPinkWireframeGlobe() {
     const t = i / latitudeCount;
     const y = Math.cos(t * Math.PI) * radius;
     const ringRadius = Math.sin(t * Math.PI) * radius;
-    const geometry = new THREE.TorusGeometry(ringRadius, tube, 6, 72);
 
-    rotation.makeRotationX(Math.PI / 2);
-    translation.makeTranslation(0, y, 0);
-    transform.multiplyMatrices(translation, rotation);
-    geometry.applyMatrix4(transform);
-    ringGeometries.push(geometry);
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(ringRadius, tube, 6, 72),
+      lineMaterial,
+    );
+
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = y;
+    ring.renderOrder = -100001;
+    globe.add(ring);
   }
 
   const longitudeCount = 16;
 
   for (let i = 0; i < longitudeCount; i += 1) {
-    const geometry = new THREE.TorusGeometry(radius, tube, 6, 84);
-    rotation.makeRotationY((i / longitudeCount) * Math.PI);
-    geometry.applyMatrix4(rotation);
-    ringGeometries.push(geometry);
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(radius, tube, 6, 84),
+      lineMaterial,
+    );
+
+    ring.rotation.y = (i / longitudeCount) * Math.PI;
+    ring.renderOrder = -100001;
+    globe.add(ring);
   }
 
-  const outerGeometry = new THREE.TorusGeometry(
-    radius * 1.01,
-    tube * 1.75,
-    6,
-    96,
+  const outerRing = new THREE.Mesh(
+    new THREE.TorusGeometry(radius * 1.01, tube * 1.75, 6, 96),
+    lineMaterial,
   );
-  rotation.makeRotationX(Math.PI / 2);
-  outerGeometry.applyMatrix4(rotation);
-  ringGeometries.push(outerGeometry);
 
-  const mergedRingGeometry = mergeGeometries(ringGeometries, false);
-  ringGeometries.forEach((geometry) => geometry.dispose());
-
-  if (mergedRingGeometry) {
-    const rings = new THREE.Mesh(mergedRingGeometry, lineMaterial);
-    rings.name = 'PinkWireframeGlobeMergedRings';
-    rings.renderOrder = -100001;
-    rings.frustumCulled = false;
-    globe.add(rings);
-  }
+  outerRing.rotation.x = Math.PI / 2;
+  outerRing.renderOrder = -100001;
+  globe.add(outerRing);
 
   globe.position.set(0, 29.0, -620);
   globe.scale.setScalar(22);
@@ -1329,6 +1411,7 @@ function createPinkWireframeGlobe() {
 
   return globe;
 }
+
 
 function createInfinityTriangleWater() {
   // Star-Wars-style flat infinity triangle.
@@ -1369,8 +1452,8 @@ function createInfinityTriangleWater() {
       uWaterTexture: { value: null },
       uTextureStrength: { value: 0.0 },
 
-      colorA: { value: new THREE.Color('#c8f7ff') },
-      colorB: { value: new THREE.Color('#f7ddff') },
+      colorA: { value: new THREE.Color('#9c3131') },
+      colorB: { value: new THREE.Color('#9c3131') },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -1874,24 +1957,11 @@ function useButtonPressSound() {
       }
     };
 
-    const audioPerformanceProfile = getRuntimePerformanceProfile();
-    let preloadObserver = null;
+    BUTTON_SOUND_PRELOAD_URLS.forEach(preloadButtonSoundUrl);
+    preloadMountedButtons();
 
-    if (!audioPerformanceProfile.lowEndMobile) {
-      BUTTON_SOUND_PRELOAD_URLS.forEach(preloadButtonSoundUrl);
-      preloadMountedButtons();
-
-      preloadObserver = new MutationObserver(preloadMountedButtons);
-      preloadObserver.observe(document.body, { childList: true, subtree: true });
-    } else {
-      // On memory-constrained phones, sounds load on first use instead of
-      // competing with WebGL textures/models and occupying memory up front.
-      [
-        BUTTON_PRESS_FALLBACK_SOUND_URL,
-        normalizeButtonSoundUrl('intro-enter.mp3'),
-        normalizeButtonSoundUrl('start-alien-cat-game.mp3'),
-      ].filter(Boolean).forEach(preloadButtonSoundUrl);
-    }
+    const preloadObserver = new MutationObserver(preloadMountedButtons);
+    preloadObserver.observe(document.body, { childList: true, subtree: true });
 
     document.addEventListener('pointerdown', onPointerDown, true);
     document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
@@ -1903,7 +1973,7 @@ function useButtonPressSound() {
     return () => {
       destroyed = true;
       preloadAbortController.abort();
-      preloadObserver?.disconnect?.();
+      preloadObserver.disconnect();
       document.removeEventListener('pointerdown', onPointerDown, true);
       document.removeEventListener('touchstart', onTouchStart, true);
       document.removeEventListener('mousedown', onMouseDown, true);
@@ -1962,7 +2032,6 @@ const selectedTranslateLanguageName =
     const viewportHeight = 10;
 
     const isMobileIntro = width < 700 || window.matchMedia?.('(pointer: coarse)').matches;
-    const introPerformanceProfile = getRuntimePerformanceProfile();
    const INTRO_BUBBLE_COUNT = isMobileIntro ? 64 : 92;
 const INTRO_VISIBLE_SECONDS = 3.6;
 const INTRO_FADE_SECONDS = 0.78;
@@ -2109,11 +2178,7 @@ window.addEventListener('keydown', handleIntroKeyDown);
     const resizeBubbleCanvas = () => {
       width = window.innerWidth;
       height = window.innerHeight;
-      const dprLimit = introPerformanceProfile.lowEndMobile
-        ? 1.0
-        : width < 700
-          ? 1.25
-          : 1.5;
+      const dprLimit = width < 700 ? 1.0 : 1.25;
       const dpr = Math.min(window.devicePixelRatio || 1, dprLimit);
 
       bubbleCanvas.width = Math.round(width * dpr);
@@ -2129,7 +2194,6 @@ window.addEventListener('keydown', handleIntroKeyDown);
       canvas: catCanvas,
       alpha: true,
       antialias: true,
-      stencil: false,
       powerPreference: 'high-performance',
     });
     renderer.setClearColor(0x000000, 0);
@@ -2218,12 +2282,11 @@ const introMixers = [];
       introCamera.bottom = -viewportHeight / 2;
       introCamera.updateProjectionMatrix();
 
-      const dprLimit = introPerformanceProfile.lowEndMobile
-        ? 1.1
-        : width < 700
-          ? 1.35
-          : 1.5;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprLimit));
+const dprLimit = width < 768 ? 1.5 : 1.5;
+
+renderer.setPixelRatio(
+  Math.min(window.devicePixelRatio || 1, dprLimit)
+);
       renderer.setSize(width, height, false);
     };
 
@@ -2697,13 +2760,7 @@ side: source.side ?? THREE.FrontSide,
       powerPreference: 'high-performance',
     });
 
-    const translatePerformanceProfile = getRuntimePerformanceProfile();
-    renderer.setPixelRatio(
-      Math.min(
-        window.devicePixelRatio || 1,
-        translatePerformanceProfile.lowEndMobile ? 1.0 : 1.25,
-      ),
-    );
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.42;
@@ -2756,12 +2813,21 @@ side: source.side ?? THREE.FrontSide,
       opacity: 0.82,
     });
 
-    const stars = createInstancedSparkleField(
-      'ShoppingIntroTranslateSparkles',
-      110,
-      starGeometry,
-      starMaterial,
-    );
+    const stars = new THREE.Group();
+    stars.name = 'ShoppingIntroTranslateSparkles';
+
+    for (let i = 0; i < 110; i += 1) {
+      const star = new THREE.Mesh(starGeometry, starMaterial);
+
+      star.position.set(
+        (Math.random() - 0.5) * 12,
+        (Math.random() - 0.5) * 8,
+        -4 - Math.random() * 4,
+      );
+
+      star.scale.setScalar(0.6 + Math.random() * 2.2);
+      stars.add(star);
+    }
 
     scene.add(stars);
 
@@ -3059,6 +3125,89 @@ side: source.side ?? THREE.FrontSide,
   );
 }
 
+function CollectionMiniGlobe() {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+
+    let disposed = false;
+    let frame = 0;
+
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 20);
+    camera.position.set(0, 0, 5.2);
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      alpha: true,
+      antialias: true,
+      powerPreference: 'high-performance',
+    });
+
+    renderer.setClearColor(0x000000, 0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    const globe = createPinkWireframeGlobe();
+
+    // Reset the big water-scene placement so the same globe becomes tiny here.
+    globe.position.set(0, 0, 0);
+    globe.scale.setScalar(0.92);
+    globe.rotation.set(-0.18, 0, 0.08);
+
+    globe.traverse((child) => {
+      child.renderOrder = 1000;
+      child.frustumCulled = false;
+    });
+
+    scene.add(globe);
+
+    const resize = () => {
+      const size = Math.max(1, canvas.clientWidth || 110);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+
+      renderer.setPixelRatio(dpr);
+      renderer.setSize(size, size, false);
+
+      camera.aspect = 1;
+      camera.updateProjectionMatrix();
+    };
+
+    const clock = new THREE.Clock();
+
+    const animate = () => {
+      if (disposed) return;
+
+      const delta = Math.min(clock.getDelta(), 0.05);
+
+      globe.rotation.y += delta * 0.72;
+      globe.rotation.x = -0.18 + Math.sin(clock.elapsedTime * 0.5) * 0.035;
+      globe.rotation.z = 0.08 + Math.cos(clock.elapsedTime * 0.42) * 0.025;
+
+      renderer.render(scene, camera);
+      frame = requestAnimationFrame(animate);
+    };
+
+    resize();
+    animate();
+
+    window.addEventListener('resize', resize);
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', resize);
+      disposeObject(scene);
+      renderer.dispose();
+    };
+  }, []);
+
+  return <canvas className="collectionMiniGlobeCanvas" ref={canvasRef} />;
+}
+
+
 export default function CosmicVoyage() {
   useButtonPressSound();
 
@@ -3291,13 +3440,7 @@ side: source.side ?? THREE.FrontSide,
       powerPreference: 'high-performance',
     });
 
-    const translatePerformanceProfile = getRuntimePerformanceProfile();
-    renderer.setPixelRatio(
-      Math.min(
-        window.devicePixelRatio || 1,
-        translatePerformanceProfile.lowEndMobile ? 1.0 : 1.25,
-      ),
-    );
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.42;
@@ -3350,12 +3493,21 @@ side: source.side ?? THREE.FrontSide,
       opacity: 0.82,
     });
 
-    const stars = createInstancedSparkleField(
-      'MainExperienceTranslateSparkles',
-      110,
-      starGeometry,
-      starMaterial,
-    );
+    const stars = new THREE.Group();
+    stars.name = 'MainExperienceTranslateSparkles';
+
+    for (let i = 0; i < 110; i += 1) {
+      const star = new THREE.Mesh(starGeometry, starMaterial);
+
+      star.position.set(
+        (Math.random() - 0.5) * 12,
+        (Math.random() - 0.5) * 8,
+        -4 - Math.random() * 4,
+      );
+
+      star.scale.setScalar(0.6 + Math.random() * 2.2);
+      stars.add(star);
+    }
 
     scene.add(stars);
 
@@ -3604,16 +3756,7 @@ side: source.side ?? THREE.FrontSide,
 
     THREE.Cache.enabled = true;
 
-    const preloadPerformanceProfile = getRuntimePerformanceProfile();
-
-    // The shopping-bag cat is the first 3D object the visitor sees.
-    INTRO_MODEL_PRELOAD_URLS.forEach((url) => {
-      preloadGLB(preloadStore, url).catch((error) => {
-        console.warn(`Intro model preload skipped ${url}:`, error);
-      });
-    });
-
-    // Cat + boat are required for the main experience.
+    // Start the two models needed for first paint immediately.
     Promise.allSettled(
       CORE_MODEL_PRELOAD_URLS.map((url) => preloadGLB(preloadStore, url)),
     ).then((results) => {
@@ -3631,21 +3774,20 @@ side: source.side ?? THREE.FrontSide,
       }
     });
 
-    // Strong devices can warm optional assets. Low-memory phones load them only
-    // when a feature asks for them, which leaves much more memory for WebGL.
-    const cancelIdleWork = preloadPerformanceProfile.lowEndMobile
-      ? null
-      : runSoonWhenIdle(() => {
-          DEFERRED_MODEL_PRELOAD_URLS.forEach((url) => {
-            preloadGLB(preloadStore, url).catch((error) => {
-              console.warn(`Optional model preload skipped ${url}:`, error);
-            });
-          });
-
-          PUBLIC_IMAGE_PRELOAD_URLS.forEach((url) => {
-            preloadTexture(preloadStore, url).catch(() => null);
+    // Warm the rest of /public in idle time so the intro stays smooth.
+    const cancelIdleWork = runSoonWhenIdle(() => {
+      ALL_PUBLIC_GLB_PRELOAD_URLS
+        .filter((url) => !CORE_MODEL_PRELOAD_URLS.includes(url))
+        .forEach((url) => {
+          preloadGLB(preloadStore, url).catch((error) => {
+            console.warn(`Optional model preload skipped ${url}:`, error);
           });
         });
+
+      PUBLIC_IMAGE_PRELOAD_URLS.forEach((url) => {
+        preloadTexture(preloadStore, url).catch(() => null);
+      });
+    });
 
     return () => {
       cancelled = true;
@@ -3670,34 +3812,36 @@ side: source.side ?? THREE.FrontSide,
 
     THREE.Cache.enabled = true;
 
-    const performanceProfile = getRuntimePerformanceProfile();
-    const isMobile = performanceProfile.isMobile;
+    // const renderer = new THREE.WebGLRenderer({
+    //  canvas,
+    //  antialias: false,
+    //  alpha: true,
+    //  powerPreference: 'high-performance',
+    //  precision: 'mediump',
+    //});
 
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: true,
-      alpha: true,
-      stencil: false,
-      powerPreference: 'high-performance',
-    });
+    //renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+    // renderer.setSize(width, height);
 
-    // Strong phones keep the current 1.5 DPR quality. Phones that look weak
-    // start slightly lower, then the frame-time controller below can move up or
-    // down automatically. CSS size/camera/model quality never changes.
-    const maximumDpr = isMobile ? 1.5 : 1.5;
-    let currentDpr = performanceProfile.lowEndMobile ? 1.2 : maximumDpr;
-    const normalMinimumDpr = 1.0;
-    const emergencyMinimumDpr = 0.85;
+    const isMobile =
+  window.innerWidth < 768 ||
+  window.matchMedia?.('(pointer: coarse)').matches;
 
-    const applyRendererDpr = (nextDpr) => {
-      currentDpr = THREE.MathUtils.clamp(nextDpr, emergencyMinimumDpr, maximumDpr);
-      renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio || 1, currentDpr),
-      );
-      renderer.setSize(width, height, false);
-    };
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: true,
+  alpha: true,
+  powerPreference: 'high-performance',
+});
 
-    applyRendererDpr(currentDpr);
+const maxDpr = isMobile ? 1.5 : 1.5;
+
+renderer.setPixelRatio(
+  Math.min(window.devicePixelRatio || 1, maxDpr)
+);
+
+renderer.setSize(width, height);
+
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -3923,10 +4067,10 @@ scene.add(pinkWireframeGlobe);
         const floatRingModel = ringGLTF.scene;
         floatRingModel.name = 'FloatingRingModel';
         improveModelQuality(floatRingModel, renderer, [
-          new THREE.Color(0xffb7dc),
-          new THREE.Color(0xcab8ff),
-          new THREE.Color(0xaedbff),
-          new THREE.Color(0xffffff),
+          // new THREE.Color(0xffb7dc),
+          // new THREE.Color(0xcab8ff),
+          // new THREE.Color(0xaedbff),
+          // new THREE.Color(0xffffff),
         ]);
 
         fitModel(
@@ -3964,9 +4108,9 @@ scene.add(pinkWireframeGlobe);
         const boatModel = boatGLTF.scene;
         boatModel.name = 'CosmicBoatModel';
         improveModelQuality(boatModel, renderer, [
-          new THREE.Color(0xaedbff),
-          new THREE.Color(0xcab8ff),
-          new THREE.Color(0xffb7dc),
+        //  new THREE.Color(0xaedbff),
+        //  new THREE.Color(0xcab8ff),
+        //  new THREE.Color(0xffb7dc),
         ]);
 
         const boatBox = fitModel(
@@ -4276,9 +4420,9 @@ scene.add(pinkWireframeGlobe);
         state.launchElapsed = 0;
 
         boatGroup.updateMatrixWorld(true);
-        seatWorldPosition.copy(seatPosition);
-        boatGroup.localToWorld(seatWorldPosition);
-        state.tgt.copy(seatWorldPosition);
+        state.tgt.copy(
+          boatGroup.localToWorld(seatPosition.clone()),
+        );
 
         // Keep the cat visible throughout the loading sequence.
         requestSiteSound(CAT_TO_BOAT_LOADING_SOUND_FILE);
@@ -4384,9 +4528,9 @@ scene.add(pinkWireframeGlobe);
       height = window.innerHeight;
 
       renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio || 1, currentDpr),
+        Math.min(window.devicePixelRatio || 1, 1.25),
       );
-      renderer.setSize(width, height, false);
+      renderer.setSize(width, height);
 
       camera.aspect = width / height;
       camera.position.set(
@@ -4403,106 +4547,21 @@ scene.add(pinkWireframeGlobe);
     const clock = new THREE.Clock();
     let elapsed = 0;
 
-    // Reuse these objects/arrays so the 60 FPS loop produces almost no garbage.
-    const animatedWaterColor = new THREE.Color();
-    const waterGeometry = pastelWater.water.geometry;
-    const waterPositionAttr = pastelWater.waterPositions;
-    const waterPositionArray = waterPositionAttr.array;
-    const waterBaseArray = pastelWater.basePositions;
-    const waterColorAttr = waterGeometry.attributes.color;
-    const waterColorArray = waterColorAttr.array;
-    const waterVertexCount = waterPositionAttr.count;
-    let waterFrame = 0;
-
-    const seatWorldPosition = new THREE.Vector3();
-    const CAT_ON_BOAT_OFFSET = new THREE.Vector3(0, 0.0, 0);
-    const CAT_ON_BOAT_ROTATION = new THREE.Euler(-0.08, 0, 0);
-
-    // Never let 90/120 Hz phone screens make this scene do 90/120 full WebGL
-    // renders per second. 60 FPS remains visually identical to the intended site.
-    const mobileFrameInterval = 1000 / 60;
-    let lastMobileRenderAt = 0;
-
-    // Adaptive INTERNAL resolution. It does not remove models/effects/lights.
-    let perfWindowStartedAt = performance.now();
-    let perfFrameCount = 0;
-    let fastPerfWindows = 0;
-    let severePerfWindows = 0;
-
-    const updateAdaptiveMobileDpr = (now) => {
-      if (!isMobile || document.hidden) return;
-
-      perfFrameCount += 1;
-      const windowDuration = now - perfWindowStartedAt;
-      if (windowDuration < 2400) return;
-
-      const fps = perfFrameCount / (windowDuration / 1000);
-      let nextDpr = currentDpr;
-
-      if (fps < 32) {
-        severePerfWindows += 1;
-        fastPerfWindows = 0;
-        const floor = severePerfWindows >= 2
-          ? emergencyMinimumDpr
-          : normalMinimumDpr;
-        nextDpr = Math.max(floor, currentDpr - 0.15);
-      } else if (fps < 45) {
-        severePerfWindows = 0;
-        fastPerfWindows = 0;
-        nextDpr = Math.max(normalMinimumDpr, currentDpr - 0.10);
-      } else if (fps < 52) {
-        severePerfWindows = 0;
-        fastPerfWindows = 0;
-        nextDpr = Math.max(normalMinimumDpr, currentDpr - 0.05);
-      } else if (fps > 58) {
-        severePerfWindows = 0;
-        fastPerfWindows += 1;
-        if (fastPerfWindows >= 3 && currentDpr < maximumDpr) {
-          nextDpr = Math.min(maximumDpr, currentDpr + 0.05);
-          fastPerfWindows = 0;
-        }
-      } else {
-        severePerfWindows = 0;
-        fastPerfWindows = 0;
-      }
-
-      if (Math.abs(nextDpr - currentDpr) >= 0.025) {
-        applyRendererDpr(nextDpr);
-      }
-
-      perfFrameCount = 0;
-      perfWindowStartedAt = now;
-    };
-
     const lerp = (from, to, amount) =>
       from + (to - from) * amount;
 
     const easeOutCubic = (value) =>
       1 - Math.pow(1 - value, 3);
 
-    renderer.setAnimationLoop((now = performance.now()) => {
-      if (document.hidden) {
-        clock.getDelta();
-        return;
-      }
-
-      // When the runner game is open, pause this heavy background scene so the
-      // game gets the phone/GPU all to itself.
-      if (runnerGameOpenRef.current) {
-        clock.getDelta();
-        return;
-      }
-
-      if (
-        isMobile &&
-        lastMobileRenderAt > 0 &&
-        now - lastMobileRenderAt < mobileFrameInterval - 1
-      ) {
-        return;
-      }
-      lastMobileRenderAt = now;
-
+    renderer.setAnimationLoop(() => {
       const delta = Math.min(clock.getDelta(), 0.05);
+
+      // When the runner game is open, pause this heavy background scene
+      // so the game gets the phone/GPU all to itself.
+      if (runnerGameOpenRef.current) {
+        return;
+      }
+
       elapsed += delta;
 
 pinkWireframeGlobe.rotation.y += delta * 0.42;
@@ -4535,65 +4594,61 @@ pinkWireframeGlobe.rotation.z =
       floatRingGlow.intensity = 1.55 + Math.sin(elapsed * 3.2) * 0.28;
 
 
-      // Smooth high waves with the SAME equations/colors, but without allocating
-      // thousands of THREE.Color objects per second.
-      waterFrame += 1;
+      // Smooth high waves with animated vertex colors.
+      // PlaneGeometry lies in local X/Y, so wave height is local Z after rotation.
+      const colorAttr = pastelWater.water.geometry.attributes.color;
 
-      const longWaveTime = elapsed * 2.55;
-      const crossWaveTime = elapsed * 2.15;
-      const diagonalWaveTime = elapsed * 3.2;
-      const smallTideTime = elapsed * 4.1;
-      const ribbonATime = elapsed * 0.9;
-      const ribbonBTime = elapsed * 0.7;
-      const ribbonCTime = elapsed * 1.15;
+      for (let i = 0; i < pastelWater.waterPositions.count; i += 1) {
+        const x = pastelWater.basePositions[i * 3];
+        const y = pastelWater.basePositions[i * 3 + 1];
 
-      for (let i = 0; i < waterVertexCount; i += 1) {
-        const index3 = i * 3;
-        const x = waterBaseArray[index3];
-        const y = waterBaseArray[index3 + 1];
+        const longWave =
+          Math.sin(x * 0.18 + elapsed * 2.55) * 0.50;
+        const crossWave =
+          Math.cos(y * 0.16 + elapsed * 2.15) * 0.36;
+        const diagonalWave =
+          Math.sin((x + y) * 0.085 + elapsed * 3.2) * 0.22;
+        const smallTide =
+          Math.cos((x - y) * 0.12 + elapsed * 4.1) * 0.12;
 
-        const longWave = Math.sin(x * 0.18 + longWaveTime) * 0.50;
-        const crossWave = Math.cos(y * 0.16 + crossWaveTime) * 0.36;
-        const diagonalWave = Math.sin((x + y) * 0.085 + diagonalWaveTime) * 0.22;
-        const smallTide = Math.cos((x - y) * 0.12 + smallTideTime) * 0.12;
+        const height =
+          longWave +
+          crossWave +
+          diagonalWave +
+          smallTide;
 
-        const height = longWave + crossWave + diagonalWave + smallTide;
-        waterPositionArray[index3 + 2] = height;
+        pastelWater.waterPositions.array[i * 3 + 2] = height;
 
-        let crest = (height + 0.75) / 1.65;
-        if (crest < 0) crest = 0;
-        else if (crest > 1) crest = 1;
+        const crest = THREE.MathUtils.clamp(
+          (height + 0.75) / 1.65,
+          0,
+          1,
+        );
 
-        const ribbonA = (Math.sin(x * 0.105 + ribbonATime) + 1) * 0.5;
-        const ribbonB = (Math.cos(y * 0.115 - ribbonBTime) + 1) * 0.5;
-        const ribbonC = (Math.sin((x + y) * 0.06 + ribbonCTime) + 1) * 0.5;
+        const ribbonA =
+          (Math.sin(x * 0.105 + elapsed * 0.9) + 1) * 0.5;
+        const ribbonB =
+          (Math.cos(y * 0.115 - elapsed * 0.7) + 1) * 0.5;
+        const ribbonC =
+          (Math.sin((x + y) * 0.06 + elapsed * 1.15) + 1) * 0.5;
 
-        animatedWaterColor
-          .copy(pastelWater.deepCyan)
+        const c = new THREE.Color();
+
+        c.copy(pastelWater.deepCyan)
           .lerp(pastelWater.cyan, crest * 0.65)
           .lerp(pastelWater.pink, ribbonA * 0.42)
           .lerp(pastelWater.lavender, ribbonB * 0.34)
           .lerp(pastelWater.softPink, ribbonC * 0.20)
-          .lerp(
-            pastelWater.whiteFoam,
-            Math.max(0, crest - 0.72) * 0.75,
-          );
+          .lerp(pastelWater.whiteFoam, Math.max(0, crest - 0.72) * 0.75);
 
-        waterColorArray[index3] = animatedWaterColor.r;
-        waterColorArray[index3 + 1] = animatedWaterColor.g;
-        waterColorArray[index3 + 2] = animatedWaterColor.b;
+        colorAttr.array[i * 3] = c.r;
+        colorAttr.array[i * 3 + 1] = c.g;
+        colorAttr.array[i * 3 + 2] = c.b;
       }
 
-      waterPositionAttr.needsUpdate = true;
-      waterColorAttr.needsUpdate = true;
-
-      // Vertex positions/colors still update every frame. Only the costly normal
-      // reconstruction is halved on phones, which is visually indistinguishable
-      // on this constantly moving glossy surface.
-      if (!isMobile || waterFrame % 2 === 0) {
-        waterGeometry.computeVertexNormals();
-      }
-
+      pastelWater.waterPositions.needsUpdate = true;
+      colorAttr.needsUpdate = true;
+      pastelWater.water.geometry.computeVertexNormals();
       pastelWater.water.rotation.z = Math.sin(elapsed * 0.8) * 0.006;
 
       if (state.launching) {
@@ -4661,9 +4716,9 @@ boatGroup.rotation.x = 0;
         // Convert the seat marker/local seat position into scene space
         // every frame so the cat follows the farther-away floating boat.
         boatGroup.updateMatrixWorld(true);
-        seatWorldPosition.copy(seatPosition);
-        boatGroup.localToWorld(seatWorldPosition);
-        state.tgt.copy(seatWorldPosition);
+        state.tgt.copy(
+          boatGroup.localToWorld(seatPosition.clone()),
+        );
       }
 
       state.cur.x = lerp(
@@ -4701,6 +4756,9 @@ if (state.landed) {
     0,
     Math.sin(elapsed * 8),
   );
+
+  const CAT_ON_BOAT_OFFSET = new THREE.Vector3(0, 0.0, 0);
+  const CAT_ON_BOAT_ROTATION = new THREE.Euler(-0.08, 0, 0);
 
   catGroup.position.add(CAT_ON_BOAT_OFFSET);
   catGroup.position.y += happyPulse * 0.09;
@@ -4749,7 +4807,6 @@ if (state.landed) {
       }
 
       renderer.render(scene, camera);
-      updateAdaptiveMobileDpr(now);
     });
 
     return () => {
@@ -4794,22 +4851,37 @@ if (state.landed) {
         <div className="pastelBackgroundMotion">
           <div className="spaceBg" />
 
-          <div className="movingSymbolLayer">
-            {movingBgSymbols.map((symbol) => (
-              <img
-                key={symbol.id}
-                className="movingBgSymbol"
-                src={symbol.src}
-                alt=""
-                style={{
-                  '--x': `${symbol.x}%`,
-                  '--y': `${symbol.y}%`,
-                  '--size': `${symbol.size}px`,
-                  '--opacity': symbol.opacity,
-                }}
-              />
-            ))}
-          </div>
+<div className="movingSymbolLayer">
+  {movingBgSymbols.map((symbol) => (
+    <img
+      key={symbol.id}
+      className="movingBgSymbol"
+      src={symbol.src}
+      alt=""
+      aria-hidden="true"
+      draggable={false}
+      decoding="async"
+      style={{
+        '--x': `${symbol.x}%`,
+        '--y': `${symbol.y}%`,
+        '--size': `${symbol.size}px`,
+        '--opacity': symbol.opacity,
+
+        '--symbol-float-duration':
+          `${symbol.floatDuration}s`,
+
+        '--symbol-flash-duration':
+          `${symbol.flashDuration}s`,
+
+        '--symbol-flash-delay':
+          `${symbol.flashDelay}s`,
+
+        animationDirection:
+          `${symbol.floatDirection}, normal`,
+      }}
+    />
+  ))}
+</div>
         </div>
       </div>
 
@@ -5004,7 +5076,7 @@ if (state.landed) {
             <div className="termHeader missionGalleryTitleBar">
               <span id="missionGalleryTitle">{copy.collectionsTitle}</span>
             </div>
-
+			  
             <div className="missionGalleryIntro" />
 
             <button
@@ -5028,10 +5100,11 @@ if (state.landed) {
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
-              <MissionLogoOrb />
+              <CollectionMiniGlobe />
             </button>
 
             <div className="missionImageGrid">
+				<MissionLogoOrb />
               {MISSION_LINK_IMAGES.map((item) => {
                 const collectionTitle =
                   copy.collectionNames?.[item.titleKey] || item.title;

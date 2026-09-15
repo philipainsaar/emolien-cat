@@ -17,50 +17,6 @@ const RUNNER_SCORE_MULTIPLIER = 12;
 const RUNNER_SPARKLE_COUNT = 12;
 const RUNNER_STRIPE_COUNT = 12;
 
-
-function getRunnerPerformanceProfile() {
-  if (typeof window === "undefined" || typeof navigator === "undefined") {
-    return { isMobile: false, lowEndMobile: false };
-  }
-
-  const isMobile =
-    window.innerWidth < 768 ||
-    window.matchMedia?.("(pointer: coarse)").matches === true;
-  const memory = Number(navigator.deviceMemory || 0);
-  const cores = Number(navigator.hardwareConcurrency || 0);
-  const saveData = navigator.connection?.saveData === true;
-
-  return {
-    isMobile,
-    lowEndMobile: isMobile && (
-      saveData ||
-      (memory > 0 && memory <= 4) ||
-      (cores > 0 && cores <= 4)
-    ),
-  };
-}
-
-function disposeRunnerScene(scene) {
-  const geometries = new Set();
-  const materials = new Set();
-
-  scene?.traverse?.((object) => {
-    if (object.geometry) geometries.add(object.geometry);
-    const objectMaterials = object.material
-      ? Array.isArray(object.material)
-        ? object.material
-        : [object.material]
-      : [];
-    objectMaterials.forEach((material) => material && materials.add(material));
-  });
-
-  geometries.forEach((geometry) => geometry.dispose?.());
-  materials.forEach((material) => {
-    Object.values(material).forEach((value) => value?.isTexture && value.dispose?.());
-    material.dispose?.();
-  });
-}
-
 const LEADERBOARD_API_URL = "/api/leaderboard";
 const LOCAL_LEADERBOARD_KEY = "cosmicRunnerLeaderboardLocal";
 const PLAYER_NAME_KEY = "cosmicRunnerPlayerName";
@@ -298,33 +254,14 @@ export default function CosmicRunnerOverlay({
 
     const camera = new THREE.PerspectiveCamera(58, 1, 0.01, 100);
 
-    const performanceProfile = getRunnerPerformanceProfile();
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      stencil: false,
-      powerPreference: "high-performance",
-    });
-
-    const maximumDpr = performanceProfile.isMobile ? 1.25 : 1.5;
-    let currentDpr = performanceProfile.lowEndMobile
-      ? RUNNER_RENDER_PIXEL_RATIO
-      : maximumDpr;
-    const minimumDpr = 0.8;
-
-    const applyDpr = (value) => {
-      currentDpr = THREE.MathUtils.clamp(value, minimumDpr, maximumDpr);
-      renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio || 1, currentDpr),
-      );
-      const w = mount.clientWidth || window.innerWidth;
-      const h = mount.clientHeight || window.innerHeight;
-      renderer.setSize(w, h, false);
-    };
-
-    applyDpr(currentDpr);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const renderer = new THREE.WebGLRenderer({
+  antialias: false,
+  alpha: true,
+  powerPreference: "high-performance",
+});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, RUNNER_RENDER_PIXEL_RATIO));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
 
     scene.add(new THREE.HemisphereLight(0xffffff, 0xd8c4ff, 2.8));
@@ -332,13 +269,6 @@ export default function CosmicRunnerOverlay({
     const sun = new THREE.DirectionalLight(0xffffff, 3.2);
     sun.position.set(4, 8, 6);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(512, 512);
-    sun.shadow.camera.near = 0.5;
-    sun.shadow.camera.far = 24;
-    sun.shadow.camera.left = -8;
-    sun.shadow.camera.right = 8;
-    sun.shadow.camera.top = 8;
-    sun.shadow.camera.bottom = -4;
     scene.add(sun);
 
     const colors = {
@@ -415,75 +345,44 @@ export default function CosmicRunnerOverlay({
           }
         },
         undefined,
-        () => setStatus(`Could not load ${modelPath}.`)
+        () => setStatus("Could not load alien-cat.glb.")
       );
     }
 
+    const groundGroup = new THREE.Group();
+    scene.add(groundGroup);
     const groundMat = new THREE.MeshStandardMaterial({ color: colors.blue, roughness: 0.64 });
-    const groundGeometry = new THREE.BoxGeometry(22, 0.22, 5.4);
-    const ground = new THREE.InstancedMesh(groundGeometry, groundMat, 3);
-    ground.receiveShadow = true;
-    scene.add(ground);
-
-    const groundX = [-22, 0, 22];
-    const groundDummy = new THREE.Object3D();
-    const updateGroundInstances = () => {
-      for (let i = 0; i < groundX.length; i += 1) {
-        groundDummy.position.set(groundX[i], -0.13, 0);
-        groundDummy.rotation.set(0, 0, 0);
-        groundDummy.scale.set(1, 1, 1);
-        groundDummy.updateMatrix();
-        ground.setMatrixAt(i, groundDummy.matrix);
-      }
-      ground.instanceMatrix.needsUpdate = true;
-    };
-    updateGroundInstances();
+    for (let i = 0; i < 3; i++) {
+      const ground = new THREE.Mesh(new THREE.BoxGeometry(22, 0.22, 5.4), groundMat);
+      ground.position.set(i * 22 - 22, -0.13, 0);
+      ground.receiveShadow = true;
+      groundGroup.add(ground);
+    }
 
     const stripeMat = new THREE.MeshStandardMaterial({ color: colors.pink, roughness: 0.52 });
-    const stripeGeometry = new THREE.BoxGeometry(0.92, 0.045, 0.12);
-    const stripeMesh = new THREE.InstancedMesh(stripeGeometry, stripeMat, RUNNER_STRIPE_COUNT);
-    scene.add(stripeMesh);
-
-    const stripeX = Array.from(
-      { length: RUNNER_STRIPE_COUNT },
-      (_, i) => i * 2.2 - 12,
-    );
-    const stripeDummy = new THREE.Object3D();
-    const updateStripeInstances = () => {
-      for (let i = 0; i < stripeX.length; i += 1) {
-        stripeDummy.position.set(stripeX[i], 0.025, 2.12);
-        stripeDummy.rotation.set(0, 0, 0);
-        stripeDummy.scale.set(1, 1, 1);
-        stripeDummy.updateMatrix();
-        stripeMesh.setMatrixAt(i, stripeDummy.matrix);
-      }
-      stripeMesh.instanceMatrix.needsUpdate = true;
-    };
-    updateStripeInstances();
+    const stripes = [];
+    for (let i = 0; i < RUNNER_STRIPE_COUNT; i++) {
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.045, 0.12), stripeMat);
+      stripe.position.set(i * 2.2 - 12, 0.025, 2.12);
+      scene.add(stripe);
+      stripes.push(stripe);
+    }
 
     const obstacles = [];
     const obstacleGroup = new THREE.Group();
     scene.add(obstacleGroup);
 
-    const obstacleGeometry = new THREE.ConeGeometry(1, 1, 5);
-    const obstaclePalette = [colors.hotPink, colors.purple, colors.blue, colors.yellow];
-    const obstacleMaterials = obstaclePalette.map(
-      (color) => new THREE.MeshStandardMaterial({
-        color,
-        roughness: 0.31,
-        metalness: 0.08,
-      }),
-    );
-
     function makeObstacle() {
       const group = new THREE.Group();
       const h = THREE.MathUtils.randFloat(0.68, 1.22);
       const w = THREE.MathUtils.randFloat(0.28, 0.48);
-      const mat = obstacleMaterials[
-        Math.floor(Math.random() * obstacleMaterials.length)
-      ];
-      const crystal = new THREE.Mesh(obstacleGeometry, mat);
-      crystal.scale.set(w, h, w);
+      const palette = [colors.hotPink, colors.purple, colors.blue, colors.yellow];
+      const mat = new THREE.MeshStandardMaterial({
+        color: palette[Math.floor(Math.random() * palette.length)],
+        roughness: 0.31,
+        metalness: 0.08,
+      });
+      const crystal = new THREE.Mesh(new THREE.ConeGeometry(w, h, 5), mat);
       crystal.position.y = h / 2;
       crystal.rotation.y = Math.random() * Math.PI;
       crystal.castShadow = true;
@@ -501,48 +400,19 @@ export default function CosmicRunnerOverlay({
       obstacles.push(obstacle);
     }
 
-    const sparkleMat = new THREE.MeshStandardMaterial({
-      color: "#ffffff",
-      emissive: colors.pink,
-      emissiveIntensity: 0.62,
-    });
-    const sparkleGeometry = new THREE.OctahedronGeometry(0.075, 0);
-    const sparkleMesh = new THREE.InstancedMesh(
-      sparkleGeometry,
-      sparkleMat,
-      RUNNER_SPARKLE_COUNT,
-    );
-    scene.add(sparkleMesh);
-
-    const sparkleState = Array.from({ length: RUNNER_SPARKLE_COUNT }, () => ({
-      x: THREE.MathUtils.randFloat(-5.5, 8),
-      y: THREE.MathUtils.randFloat(2.1, 5.5),
-      z: THREE.MathUtils.randFloat(-2.4, 1.3),
-      speed: THREE.MathUtils.randFloat(0.7, 1.8),
-      rx: 0,
-      ry: 0,
-    }));
-    const sparkleDummy = new THREE.Object3D();
-
-    const updateSparkleInstances = (delta = 0) => {
-      for (let i = 0; i < sparkleState.length; i += 1) {
-        const sparkle = sparkleState[i];
-        sparkle.x -= sparkle.speed * delta;
-        sparkle.rx += 2 * delta;
-        sparkle.ry += 1.5 * delta;
-        if (sparkle.x < -5.8) {
-          sparkle.x = THREE.MathUtils.randFloat(5.8, 8.8);
-        }
-
-        sparkleDummy.position.set(sparkle.x, sparkle.y, sparkle.z);
-        sparkleDummy.rotation.set(sparkle.rx, sparkle.ry, 0);
-        sparkleDummy.scale.set(1, 1, 1);
-        sparkleDummy.updateMatrix();
-        sparkleMesh.setMatrixAt(i, sparkleDummy.matrix);
-      }
-      sparkleMesh.instanceMatrix.needsUpdate = true;
-    };
-    updateSparkleInstances(0);
+    const sparkles = [];
+    const sparkleMat = new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: colors.pink, emissiveIntensity: 0.62 });
+    for (let i = 0; i < RUNNER_SPARKLE_COUNT; i++) {
+      const sparkle = new THREE.Mesh(new THREE.OctahedronGeometry(0.075, 0), sparkleMat);
+      sparkle.position.set(
+        THREE.MathUtils.randFloat(-5.5, 8),
+        THREE.MathUtils.randFloat(2.1, 5.5),
+        THREE.MathUtils.randFloat(-2.4, 1.3)
+      );
+      sparkle.userData.speed = THREE.MathUtils.randFloat(0.7, 1.8);
+      scene.add(sparkle);
+      sparkles.push(sparkle);
+    }
 
     let velocityY = 0;
     let grounded = true;
@@ -553,60 +423,6 @@ export default function CosmicRunnerOverlay({
     let elapsed = 0;
     let nextSpawn = 1.1;
     let last = performance.now();
-    let lastRenderedAt = 0;
-    const frameInterval = 1000 / 60;
-
-    let perfStartedAt = performance.now();
-    let perfFrames = 0;
-    let slowWindows = 0;
-    let shadowsDisabledForPerformance = false;
-
-    const updateRunnerPerformance = (now) => {
-      if (!performanceProfile.isMobile || document.hidden) return;
-
-      perfFrames += 1;
-      const duration = now - perfStartedAt;
-      if (duration < 2200) return;
-
-      const fps = perfFrames / (duration / 1000);
-      let nextDpr = currentDpr;
-
-      if (fps < 34) {
-        slowWindows += 1;
-        nextDpr = Math.max(minimumDpr, currentDpr - 0.12);
-      } else if (fps < 46) {
-        slowWindows += 1;
-        nextDpr = Math.max(minimumDpr, currentDpr - 0.08);
-      } else if (fps < 53) {
-        slowWindows = 0;
-        nextDpr = Math.max(0.9, currentDpr - 0.04);
-      } else {
-        slowWindows = 0;
-        if (fps > 58 && currentDpr < maximumDpr) {
-          nextDpr = Math.min(maximumDpr, currentDpr + 0.04);
-        }
-      }
-
-      if (Math.abs(nextDpr - currentDpr) >= 0.025) {
-        applyDpr(nextDpr);
-      }
-
-      // Last-resort fallback only after resolution has already bottomed out.
-      // Gameplay/geometry/materials remain the same; only real-time shadows stop.
-      if (
-        !shadowsDisabledForPerformance &&
-        slowWindows >= 2 &&
-        currentDpr <= minimumDpr + 0.01 &&
-        fps < 36
-      ) {
-        shadowsDisabledForPerformance = true;
-        renderer.shadowMap.enabled = false;
-        sun.castShadow = false;
-      }
-
-      perfFrames = 0;
-      perfStartedAt = now;
-    };
 
     const playerBox = new THREE.Box3();
     const obstacleBox = new THREE.Box3();
@@ -704,38 +520,25 @@ export default function CosmicRunnerOverlay({
       camera.updateProjectionMatrix();
       camera.position.set(0, h >= w ? 2.95 : 2.65, h >= w ? 6.65 : 6.2);
       camera.lookAt(-0.35, 1.12, 0);
-      renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio || 1, currentDpr),
-      );
-      renderer.setSize(w, h, false);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, RUNNER_RENDER_PIXEL_RATIO));
+      renderer.setSize(w, h);
     }
 
     function animate(now) {
       if (dead) return;
       raf = requestAnimationFrame(animate);
-
-      if (document.hidden) {
-        last = now;
-        mixerClock.getDelta();
-        return;
-      }
-
-      if (
-        performanceProfile.isMobile &&
-        lastRenderedAt > 0 &&
-        now - lastRenderedAt < frameInterval - 1
-      ) {
-        return;
-      }
-      lastRenderedAt = now;
-
       const delta = Math.min(0.033, (now - last) / 1000);
       last = now;
 
       if (mixer) mixer.update(mixerClock.getDelta());
 
 
-      updateSparkleInstances(delta);
+      for (const sparkle of sparkles) {
+        sparkle.position.x -= sparkle.userData.speed * delta;
+        sparkle.rotation.x += 2 * delta;
+        sparkle.rotation.y += 1.5 * delta;
+        if (sparkle.position.x < -5.8) sparkle.position.x = THREE.MathUtils.randFloat(5.8, 8.8);
+      }
 
       if (running) {
         elapsed += delta;
@@ -755,17 +558,14 @@ export default function CosmicRunnerOverlay({
         runner.scale.set(1 + bounce, 1 - bounce * 0.7, 1 + bounce);
         runner.rotation.z = grounded ? Math.sin(now * 0.014) * 0.035 : -0.18;
 
-        for (let i = 0; i < groundX.length; i += 1) {
-          groundX[i] -= speed * delta;
-          if (groundX[i] < -22) groundX[i] += 66;
+        for (const ground of groundGroup.children) {
+          ground.position.x -= speed * delta;
+          if (ground.position.x < -22) ground.position.x += 66;
         }
-        updateGroundInstances();
-
-        for (let i = 0; i < stripeX.length; i += 1) {
-          stripeX[i] -= speed * delta;
-          if (stripeX[i] < -12) stripeX[i] += 39.6;
+        for (const stripe of stripes) {
+          stripe.position.x -= speed * delta;
+          if (stripe.position.x < -12) stripe.position.x += 39.6;
         }
-        updateStripeInstances();
 
         nextSpawn -= delta;
         if (nextSpawn <= 0) {
@@ -789,7 +589,6 @@ export default function CosmicRunnerOverlay({
       }
 
       renderer.render(scene, camera);
-      updateRunnerPerformance(now);
     }
 
     function onKey(event) {
@@ -822,9 +621,7 @@ export default function CosmicRunnerOverlay({
       window.removeEventListener("keydown", onKey);
       mount.removeEventListener("pointerdown", onPointer);
       stopGameMusic(true);
-      disposeRunnerScene(scene);
       renderer.dispose();
-      renderer.forceContextLoss?.();
       renderer.domElement.remove();
     };
   }, [open, modelPath, refreshLeaderboard]);
