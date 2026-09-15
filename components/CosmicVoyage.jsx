@@ -3437,7 +3437,6 @@ side: source.side ?? THREE.FrontSide,
     renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
-      shadows: false,
       powerPreference: 'high-performance',
     });
 
@@ -3832,7 +3831,6 @@ const renderer = new THREE.WebGLRenderer({
   canvas,
   antialias: true,
   alpha: true,
-  shadows: false,
   powerPreference: 'high-performance',
 });
 
