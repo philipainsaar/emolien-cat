@@ -1276,21 +1276,11 @@ function createUltraFastWater() {
     waterColors[i * 3 + 2] = mixedColor.b;
   }
 
-  //geometry.setAttribute(
-  //  'color',
-  //  new THREE.BufferAttribute(waterColors, 3),
-  //);
-  //geometry.computeVertexNormals();
   geometry.setAttribute(
-  'color',
-  new THREE.BufferAttribute(waterColors, 3),
-);
-
-// Tell Three.js these buffers change constantly.
-waterPositions.setUsage(THREE.DynamicDrawUsage);
-geometry.attributes.color.setUsage(THREE.DynamicDrawUsage);
-
-geometry.computeVertexNormals();
+    'color',
+    new THREE.BufferAttribute(waterColors, 3),
+  );
+  geometry.computeVertexNormals();
 
   const material = new THREE.MeshStandardMaterial({
     color: 0xffffff,
@@ -1432,8 +1422,8 @@ function createInfinityTriangleWater() {
 
   const vertices = new Float32Array([
     // Wide near edge, hidden underneath the old opaque waves.
-    -35.0, 0.0, 5.0,
-     35.0, 0.0, 5.0,
+    -35.0, 0.0, 0.0,
+     35.0, 0.0, 0.0,
 
     // Slightly longer infinity tip with soft fade-out.
       0.0, 30.0, -600.0,
@@ -2204,7 +2194,6 @@ window.addEventListener('keydown', handleIntroKeyDown);
       canvas: catCanvas,
       alpha: true,
       antialias: true,
-      shadows: false,
       powerPreference: 'high-performance',
     });
     renderer.setClearColor(0x000000, 0);
@@ -2768,7 +2757,6 @@ side: source.side ?? THREE.FrontSide,
     renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
-      shadows: false,
       powerPreference: 'high-performance',
     });
 
@@ -3156,7 +3144,6 @@ function CollectionMiniGlobe() {
       canvas,
       alpha: true,
       antialias: true,
-      shadows: false,
       powerPreference: 'high-performance',
     });
 
