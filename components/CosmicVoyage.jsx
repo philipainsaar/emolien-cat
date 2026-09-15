@@ -1432,8 +1432,8 @@ function createInfinityTriangleWater() {
 
   const vertices = new Float32Array([
     // Wide near edge, hidden underneath the old opaque waves.
-    -35.0, 0.0, 5.0,
-     35.0, 0.0, 5.0,
+    -35.0, 0.0, 15.0,
+     35.0, 0.0, 15.0,
 
     // Slightly longer infinity tip with soft fade-out.
       0.0, 30.0, -600.0,
