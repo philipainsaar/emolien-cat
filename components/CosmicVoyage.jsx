@@ -2194,6 +2194,7 @@ window.addEventListener('keydown', handleIntroKeyDown);
       canvas: catCanvas,
       alpha: true,
       antialias: true,
+      shadows: false,
       powerPreference: 'high-performance',
     });
     renderer.setClearColor(0x000000, 0);
@@ -2757,6 +2758,7 @@ side: source.side ?? THREE.FrontSide,
     renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
+      shadows: false,
       powerPreference: 'high-performance',
     });
 
@@ -3144,6 +3146,7 @@ function CollectionMiniGlobe() {
       canvas,
       alpha: true,
       antialias: true,
+      shadows: false,
       powerPreference: 'high-performance',
     });
 
@@ -3437,6 +3440,7 @@ side: source.side ?? THREE.FrontSide,
     renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
+      shadows: false,
       powerPreference: 'high-performance',
     });
 
@@ -3831,6 +3835,7 @@ const renderer = new THREE.WebGLRenderer({
   canvas,
   antialias: true,
   alpha: true,
+  shadows: false,
   powerPreference: 'high-performance',
 });
 
