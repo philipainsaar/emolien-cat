@@ -1,6 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=DotGothic16&family=Hi+Melody&family=ZCOOL+XiaoWei&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hachi+Maru+Pop&family=Hi+Melody&family=ZCOOL+XiaoWei&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Potta+One&display=swap');
 
 * {
   box-sizing: border-box;
@@ -1915,12 +1914,12 @@ body {
   font-family: var(--font-main), system-ui, sans-serif;
 }
 
-/* Japanese: Potta One everywhere */
+/* Japanese: Hachi Maru Pop everywhere */
 html[lang="ja"],
 html[lang="ja"] *,
 html[lang="ja"] *::before,
 html[lang="ja"] *::after {
-  font-family: "Potta One", var(--font-main), system-ui, sans-serif !important;
+  font-family: "Hachi Maru Pop", var(--font-main), system-ui, sans-serif !important;
 }
 
 /* Korean: Hi Melody everywhere */
@@ -1931,12 +1930,12 @@ html[lang="ko"] *::after {
   font-family: "Hi Melody", var(--font-main), system-ui, sans-serif !important;
 }
 
-/* Chinese: ZCOOL KuaiLe everywhere */
+/* Chinese: ZCOOL XiaoWei everywhere */
 html[lang="zh-CN"],
 html[lang="zh-CN"] *,
 html[lang="zh-CN"] *::before,
 html[lang="zh-CN"] *::after {
-  font-family: "ZCOOL KuaiLe", var(--font-main), system-ui, sans-serif !important;
+  font-family: "ZCOOL XiaoWei", var(--font-main), system-ui, sans-serif !important;
 }
 
 /* Bubble chat social icon boxes */
