@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=DotGothic16&family=Hi+Melody&family=ZCOOL+KuaiLe&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&family=Hi+Melody&family=ZCOOL+KuaiLe&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap');
 
 * {
@@ -16,11 +16,11 @@
   --blue: #aedbff;
   --blue-deep: #649ddd;
   --ink: #66548f;
---font-main: "Inconsolata", system-ui, sans-serif;
+  --font-main: "Inconsolata", system-ui, sans-serif;
   --font-display: "Inconsolata", system-ui, sans-serif;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap');
+
 
 @font-face {
   font-family: 'PixelScript';
@@ -30,27 +30,7 @@
   font-display: swap;
 }
 
-/* ENGLISH BODY TEXT */
-html[lang="en"] body,
-html[lang="en"] button,
-html[lang="en"] input,
-html[lang="en"] textarea,
-html[lang="en"] select {
-  font-family: 'Inconsolata', monospace;
-}
 
-/* ENGLISH HEADLINES */
-html[lang="en"] h1,
-html[lang="en"] h2,
-html[lang="en"] h3,
-html[lang="en"] h4,
-html[lang="en"] .shoppingIntroText,
-html[lang="en"] .loadingTitle,
-html[lang="en"] .shoppingIntroTranslateModalTitle,
-html[lang="en"] .missionGalleryTitleBar {
-  font-family: 'PixelScript', monospace;
-  font-weight: 400;
-}
 
 html,
 body {
@@ -2308,3 +2288,65 @@ html[lang="it"] .shoppingIntroText span {
     width: min(15vw, 120px);
   }
   }
+
+
+/*
+ * ENGLISH TYPE
+ * CosmicVoyage.jsx sets <html lang="en"> when English is selected.
+ * These overrides keep the other language-specific fonts unchanged.
+ */
+html[lang="en"] {
+  --font-main: "Inconsolata", monospace;
+  --font-display: "PixelScript", "Inconsolata", monospace;
+}
+
+/* Body copy, interactive UI, and secondary labels use Inconsolata. */
+html[lang="en"] :is(
+  body,
+  .stage,
+  .ui,
+  p,
+  label,
+  button,
+  input,
+  textarea,
+  select,
+  .hint,
+  .loadingPopup,
+  .loadingPercent,
+  .loadingNetworkTicker span,
+  .popupWindow,
+  .termText,
+  .missionImageLink,
+  .shoppingIntroTextCard,
+  .ringChatBox,
+  .ringTerminalText,
+  .ringTerminalCursor,
+  .ringSocialButton
+) {
+  font-family: var(--font-main) !important;
+}
+
+/* Section titles and actual headlines use PixelScript. */
+html[lang="en"] :is(
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  [role="heading"],
+  .shoppingIntroText,
+  .shoppingIntroText span,
+  .shoppingIntroTranslateModalTitle,
+  .loadingTitle,
+  .missionGalleryTitleBar,
+  .missionGalleryTitleBar span,
+  .termHeader,
+  .termHeader span,
+  .ringChatHeader,
+  .missionImageLink span
+) {
+  font-family: var(--font-display) !important;
+  font-weight: 400;
+}
