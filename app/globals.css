@@ -1478,7 +1478,7 @@ select,
   font-size: 0.54em;
   line-height: 1.02;
   letter-spacing: 0.04em;
-  color: rgba(242, 237, 234, 1);
+  color: var(--pink);
 }
 
 @media (max-width: 520px) {
