@@ -142,7 +142,7 @@ const SITE_TRANSLATIONS = {
     "loadingGlossyJewelry": "Loading glossy jewelry...",
     "couldNotLoadGlb": "Could not load GLB",
     "introLine1": "An Alien Cat is inviting you",
-    "introLine2": "to go shopping together x",
+    "introLine2": "to go shopping together :3",
     "enterWebsite": "Enter the website",
     "enterPortal": "CLICK HERE TO\n\nENTER THE PORTAL",
     "entering": "ENTERING...",

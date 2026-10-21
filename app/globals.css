@@ -23,16 +23,6 @@
 
 
 
-@font-face {
-  font-family: 'PixelScript';
-  src: url('/fonts/PixelScriptRegular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-
-
 html,
 body {
   width: 100%;
@@ -1474,7 +1464,7 @@ select,
   font-weight: 400;
   line-height: 0.92;
   letter-spacing: 0.018em;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--pink);
   text-shadow:
     0 2px 0 rgba(255, 255, 255, 0.65),
@@ -1531,9 +1521,9 @@ select,
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.055em;
-  text-transform: uppercase;
+  text-transform: none;
 
-  color: rgba(0, 0, 0, 0.85);
+  color: rgba(72, 68, 58, 0.85);
   background:
     linear-gradient(
       135deg,
