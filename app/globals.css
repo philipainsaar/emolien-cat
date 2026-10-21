@@ -16,8 +16,40 @@
   --blue: #aedbff;
   --blue-deep: #649ddd;
   --ink: #66548f;
---font-main: "Bitcount Prop Single", system-ui, sans-serif;
-  --font-display: "Bitcount Prop Single", "Murecho", system-ui, sans-serif;
+--font-main: "Inconsolata", system-ui, sans-serif;
+  --font-display: "Inconsolata", system-ui, sans-serif;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap');
+
+@font-face {
+  font-family: 'PixelScript';
+  src: url('/fonts/PixelScriptRegular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ENGLISH BODY TEXT */
+html[lang="en"] body,
+html[lang="en"] button,
+html[lang="en"] input,
+html[lang="en"] textarea,
+html[lang="en"] select {
+  font-family: 'Inconsolata', monospace;
+}
+
+/* ENGLISH HEADLINES */
+html[lang="en"] h1,
+html[lang="en"] h2,
+html[lang="en"] h3,
+html[lang="en"] h4,
+html[lang="en"] .shoppingIntroText,
+html[lang="en"] .loadingTitle,
+html[lang="en"] .shoppingIntroTranslateModalTitle,
+html[lang="en"] .missionGalleryTitleBar {
+  font-family: 'PixelScript', monospace;
+  font-weight: 400;
 }
 
 html,
