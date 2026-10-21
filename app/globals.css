@@ -1489,7 +1489,7 @@ select,
 
 @media (max-width: 520px) {
   .shoppingIntroTextCard {
-    top: 104px;
+    top: 135px;
     width: min(330px, 82vw);
     padding: 10px 14px 12px;
     border-radius: 18px;
@@ -1506,55 +1506,36 @@ select,
 }
 
 .shoppingIntroEnterButton {
-  position: absolute;
-  left: 50%;
-  bottom: max(34px, calc(env(safe-area-inset-bottom) + 28px));
-  z-index: 8;
-  transform: translateX(-50%);
-  pointer-events: auto;
-
-  width: min(94vw, 760px);
-  max-width: calc(100vw - 24px);
-  box-sizing: border-box;
-
-  min-width: min(210px, 58vw);
-  padding: 13px 28px 15px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.62);
-
-  font-family: var(--font-display);
-  font-size: clamp(26px, 7vw, 48px);
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: 0.055em;
-  text-transform: none;
-
-  color: rgba(72, 68, 58, 0.85);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.50),
-      rgba(255, 232, 250, 0.34) 44%,
-      rgba(224, 243, 255, 0.36)
-    );
-
-  box-shadow:
-    0 16px 50px rgba(145, 116, 205, 0.22),
-    0 0 34px rgba(255, 213, 246, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.82),
-    inset 0 -1px 0 rgba(180, 210, 255, 0.22);
-
-  backdrop-filter: blur(14px);
-
-  cursor: pointer;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-
-  text-shadow:
-    0 2px 0 rgba(255, 255, 255, 0.62),
-    0 0 18px rgba(255, 255, 255, 0.58);
-
-  animation: shoppingIntroEnterPulse 1.45s ease-in-out infinite;
+    left: 50%;
+    bottom: max(34px, calc(env(safe-area-inset-bottom) + 28px));
+    z-index: 8;
+    pointer-events: auto;
+    box-sizing: border-box;
+    width: min(94vw,760px);
+    min-width: min(210px,58vw);
+    max-width: calc(100vw - 24px);
+    font-family: var(--font-display);
+    letter-spacing: .055em;
+    text-transform: none;
+    color: #c9981dd9;
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    text-shadow: 0 2px #ffffff9e,0 0 18px #ffffff94;
+    background: linear-gradient(135deg,#ffffff80,#ffe8fa57 44%,#e0f3ff5c);
+    border: 1px solid #ffffff9e;
+    border-radius: 999px;
+    padding: 13px 28px 15px;
+    font-size: clamp(20px,3vw,28px);
+    font-weight: 400;
+    line-height: 1;
+    animation: 1.45s ease-in-out infinite shoppingIntroEnterPulse;
+    position: absolute;
+    transform: translate(-50%);
+    box-shadow: 0 16px 50px #9174cd38,0 0 34px #ffd5f657,inset 0 1px #ffffffd1,inset 0 -1px #b4d2ff38;
 }
 
 .shoppingIntroEnterButton:active {
