@@ -4526,14 +4526,16 @@ pinkWireframeGlobe.rotation.z =
         const x = pastelWater.basePositions[i * 3];
         const y = pastelWater.basePositions[i * 3 + 1];
 
+        const waterTime = elapsed * 0.40;
+
         const longWave =
-          Math.sin(x * 0.18 + elapsed * 2.55) * 0.50;
+          Math.sin(x * 0.18 + waterTime * 2.55) * 0.50;
         const crossWave =
-          Math.cos(y * 0.16 + elapsed * 2.15) * 0.36;
+          Math.cos(y * 0.16 + waterTime * 2.15) * 0.36;
         const diagonalWave =
-          Math.sin((x + y) * 0.085 + elapsed * 3.2) * 0.22;
+          Math.sin((x + y) * 0.085 + waterTime * 3.2) * 0.22;
         const smallTide =
-          Math.cos((x - y) * 0.12 + elapsed * 4.1) * 0.12;
+          Math.cos((x - y) * 0.12 + waterTime * 4.1) * 0.12;
 
         const height =
           longWave +
@@ -4550,11 +4552,11 @@ pinkWireframeGlobe.rotation.z =
         );
 
         const ribbonA =
-          (Math.sin(x * 0.105 + elapsed * 0.9) + 1) * 0.5;
+          (Math.sin(x * 0.105 + waterTime * 0.9) + 1) * 0.5;
         const ribbonB =
-          (Math.cos(y * 0.115 - elapsed * 0.7) + 1) * 0.5;
+          (Math.cos(y * 0.115 - waterTime * 0.7) + 1) * 0.5;
         const ribbonC =
-          (Math.sin((x + y) * 0.06 + elapsed * 1.15) + 1) * 0.5;
+          (Math.sin((x + y) * 0.06 + waterTime * 1.15) + 1) * 0.5;
 
         const c = new THREE.Color();
 
@@ -4663,15 +4665,15 @@ boatGroup.rotation.x = 0;
 
       catGroup.position.copy(state.cur);
 
-      if (!state.isDragging && !state.landed) {
-  const jump = Math.abs(Math.sin(elapsed * 3.2));
+if (!state.isDragging && !state.landed) {
+  const bob = Math.sin(elapsed * 1.5);
 
-  catGroup.position.y += jump * 0.38;
-  catGroup.position.z += Math.sin(elapsed * 1.6) * 0.08;
+  catGroup.position.y += bob * 0.12;
+  catGroup.position.z += Math.sin(elapsed * 0.8) * 0.04;
 
   catGroup.rotation.y = 0;
-  catGroup.rotation.z = Math.sin(elapsed * 6.4) * 0.08;
-  catGroup.rotation.x = Math.sin(elapsed * 3.2) * -0.08;
+  catGroup.rotation.z = Math.sin(elapsed * 1.2) * 0.035;
+  catGroup.rotation.x = Math.sin(elapsed * 1.5) * -0.035;
 } else if (state.isDragging) {
   catGroup.rotation.y = 0;
       }
