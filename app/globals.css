@@ -1957,7 +1957,7 @@ html[lang="zh-CN"] *::after {
     background 0.18s ease;
 }
 
-.ringSocialButton svg {
+.ringSocialButton img {
   width: min(58%, 30px);
   height: min(58%, 30px);
   display: block;

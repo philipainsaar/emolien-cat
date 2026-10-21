@@ -5166,7 +5166,6 @@ if (state.landed) {
     aria-label="TikTok"
   >
     <img
-      className="ringTiktokImage"
       src="/images/tiktok-icon.png"
       alt="TikTok"
       aria-hidden="true"
@@ -5182,7 +5181,6 @@ if (state.landed) {
     aria-label="Instagram"
   >
     <img
-      className="ringInstagramImage"
       src="/images/instagram-icon.png"
       alt="Instagram"
       aria-hidden="true"
@@ -5196,7 +5194,6 @@ if (state.landed) {
     aria-label="Email"
   >
     <img
-      className="ringEmailImage"
       src="/images/email-icon.png"
       alt="Email"
       aria-hidden="true"
@@ -5211,7 +5208,6 @@ if (state.landed) {
     onClick={shareWebsite}
   >
     <img
-      className="ringShareImage"
       src="/images/share-icon.png"
       alt="Share"
       aria-hidden="true"
