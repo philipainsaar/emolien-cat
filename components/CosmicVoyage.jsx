@@ -8,10 +8,10 @@ import CosmicRunnerOverlay from "./CosmicRunnerOverlay";
 
 import MissionLogoOrb from "./MissionLogoOrb";
 
-// PNG used for the alien cat in the intro and Three.js voyage.
-const CAT_IMAGE_URL = '/images/alien-cat-image.png';
-// The separate runner mini-game still expects a skinned GLB model.
-const RUNNER_CAT_MODEL_URL = '/models/alien-cat.glb';
+// Separate transparent PNG characters for each scene.
+const INTRO_CAT_IMAGE_URL = '/images/alien-cat-image-shopping-bag.png';
+const CAT_IMAGE_URL = '/images/alien-cat-image.png'; // Main water + boat scene
+const RUNNER_CAT_IMAGE_URL = '/images/alien-cat-game.png';
 const BOAT_MODEL_URL = '/models/cosmic-boat.glb';
 const FLOAT_RING_MODEL_URL = '/models/float-ring.glb';
 const FLOAT_RING_FALLBACK_MODEL_URL = '/models/floatring.glb';
@@ -492,7 +492,9 @@ const ALL_PUBLIC_GLB_PRELOAD_URLS = [
 ];
 
 const PUBLIC_IMAGE_PRELOAD_URLS = [
+  INTRO_CAT_IMAGE_URL,
   CAT_IMAGE_URL,
+  RUNNER_CAT_IMAGE_URL,
   '/images/pastel-sky.jpg',
   '/images/pastel-sky.png',
   '/images/water-texture.jpg',
@@ -1086,7 +1088,7 @@ function createAlienCatImage(preloadedTexture, maxDimension, groundY, name, came
   const sourceHeight = sourceImage?.naturalHeight || sourceImage?.height;
 
   if (!sourceWidth || !sourceHeight) {
-    throw new Error('The alien-cat-image.png texture has no valid dimensions.');
+    throw new Error('The alien cat PNG texture has no valid dimensions.');
   }
 
   const aspect = sourceWidth / sourceHeight;
@@ -2265,9 +2267,9 @@ const introDragState = {
 
 let introCatLoadedAt = 0;
 
-    preloadTexture(preloadStore, CAT_IMAGE_URL)
+    preloadTexture(preloadStore, INTRO_CAT_IMAGE_URL)
       .then((texture) => {
-        if (!texture) throw new Error(`Could not load ${CAT_IMAGE_URL}`);
+        if (!texture) throw new Error(`Could not load ${INTRO_CAT_IMAGE_URL}`);
         if (disposed) return;
 
         const { imageMesh } = createAlienCatImage(
@@ -3769,6 +3771,7 @@ side: source.side ?? THREE.FrontSide,
         url,
         promise: preloadGLB(preloadStore, url),
       })),
+      { url: INTRO_CAT_IMAGE_URL, promise: preloadTexture(preloadStore, INTRO_CAT_IMAGE_URL) },
       { url: CAT_IMAGE_URL, promise: preloadTexture(preloadStore, CAT_IMAGE_URL) },
     ];
 
@@ -5030,7 +5033,7 @@ if (state.landed) {
             requestSiteMusic('stop', RUNNER_GAME_MUSIC_FILE, { reset: true });
             setRunnerGameOpen(false);
           }}
-          modelPath={RUNNER_CAT_MODEL_URL}
+          imagePath={RUNNER_CAT_IMAGE_URL}
         />
       )}
 	          

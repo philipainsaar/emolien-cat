@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 const SITE_SOUND_EVENT_NAME = "galaxy-cat:play-sound";
 const SITE_MUSIC_EVENT_NAME = "galaxy-cat:music";
@@ -127,7 +126,7 @@ function requestRunnerMusic(action, options = {}) {
 export default function CosmicRunnerOverlay({
   open = false,
   onClose,
-  modelPath = "/models/alien-cat.glb",
+  imagePath = "/images/alien-cat-game.png",
 }) {
   const mountRef = useRef(null);
   const scoreRef = useRef(null);
@@ -288,8 +287,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     scene.add(runner);
 
     let visual = null;
-    let mixer = null;
-    const mixerClock = new THREE.Clock();
+    let runnerTexture = null;
 
     const setStatus = (text) => {
       if (statusRef.current) statusRef.current.textContent = text;
@@ -301,51 +299,51 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       runner.add(visual);
     }
 
-    function fitGLB(object) {
-      const wrap = new THREE.Group();
-      wrap.add(object);
-      object.updateMatrixWorld(true);
-
-      const box = new THREE.Box3().setFromObject(object);
-      const size = new THREE.Vector3();
-      const center = new THREE.Vector3();
-      box.getSize(size);
-      box.getCenter(center);
-      object.position.sub(center);
-
-      const maxAxis = Math.max(size.x, size.y, size.z) || 1;
-      const targetHeight = 2.15;
-      wrap.scale.setScalar(targetHeight / maxAxis);
-      wrap.position.y = targetHeight * 0.5;
-      wrap.rotation.y = Math.PI / 2;
-
-      wrap.traverse((child) => {
-  if (!child.isMesh) return;
-  child.castShadow = true;
-  child.receiveShadow = true;
-});
-
-      return wrap;
-    }
-
-    setStatus("Loading alien cat GLB...");
-
-    if (modelPath) {
-      new GLTFLoader().load(
-        modelPath,
-        (gltf) => {
-          if (dead) return;
-          setVisual(fitGLB(gltf.scene));
-          if (gltf.animations?.length) {
-            mixer = new THREE.AnimationMixer(gltf.scene);
-            mixer.clipAction(gltf.animations[0]).play();
-            setStatus("Alien cat loaded with animation.");
-          } else {
-            setStatus("");
+    // Render the PNG within the existing Three.js runner group.
+    // The runner group still handles jump movement, bounce, and knockdown.
+    setStatus("Loading alien cat PNG...");
+    if (imagePath) {
+      new THREE.TextureLoader().load(
+        imagePath,
+        (texture) => {
+          if (dead) {
+            texture.dispose();
+            return;
           }
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.minFilter = THREE.LinearMipmapLinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          texture.needsUpdate = true;
+          runnerTexture = texture;
+
+          const image = texture.image;
+          const aspect = (image?.naturalWidth || image?.width || 1) /
+            (image?.naturalHeight || image?.height || 1);
+          const height = 2.15;
+          const width = height * aspect;
+
+          const cat = new THREE.Mesh(
+            new THREE.PlaneGeometry(width, height),
+            new THREE.MeshBasicMaterial({
+              map: texture,
+              transparent: true,
+              alphaTest: 0.025,
+              depthWrite: false,
+              depthTest: true,
+              side: THREE.DoubleSide,
+              toneMapped: false,
+            }),
+          );
+          cat.name = "AlienCatRunnerPNG";
+          cat.position.y = height * 0.5;
+          cat.quaternion.copy(camera.quaternion);
+          setVisual(cat);
+          setStatus("");
         },
         undefined,
-        () => setStatus("Could not load alien-cat.glb.")
+        () => {
+          if (!dead) setStatus("Could not load alien-cat-game.png.");
+        },
       );
     }
 
@@ -520,6 +518,8 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       camera.updateProjectionMatrix();
       camera.position.set(0, h >= w ? 2.95 : 2.65, h >= w ? 6.65 : 6.2);
       camera.lookAt(-0.35, 1.12, 0);
+      // Keep the side-view PNG facing the viewer at every screen size.
+      if (visual) visual.quaternion.copy(camera.quaternion);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, RUNNER_RENDER_PIXEL_RATIO));
       renderer.setSize(w, h);
     }
@@ -529,8 +529,6 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       raf = requestAnimationFrame(animate);
       const delta = Math.min(0.033, (now - last) / 1000);
       last = now;
-
-      if (mixer) mixer.update(mixerClock.getDelta());
 
 
       for (const sparkle of sparkles) {
@@ -621,10 +619,15 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       window.removeEventListener("keydown", onKey);
       mount.removeEventListener("pointerdown", onPointer);
       stopGameMusic(true);
+      if (visual) {
+        visual.geometry?.dispose();
+        visual.material?.dispose();
+      }
+      runnerTexture?.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [open, modelPath, refreshLeaderboard]);
+  }, [open, imagePath, refreshLeaderboard]);
 
   return (
     <>
