@@ -13,6 +13,7 @@ const INTRO_CAT_IMAGE_URL = '/images/alien-cat-image-shopping-bag.png';
 const CAT_IMAGE_URL = '/images/alien-cat-image.png'; // Main water + boat scene
 const RUNNER_CAT_IMAGE_URL = '/images/alien-cat-game.png';
 const BOAT_IMAGE_URL = '/images/cosmic-boat.png';
+const BOAT_BACK_IMAGE_URL = '/images/cosmic-boat-back.png'; // Show as soon as the boat starts flying away
 const FLOAT_RING_IMAGE_URL = '/images/float-ring.png';
 const SPARKLE_HEART_MODEL_URL = '/models/SparkleHeart_LowPoly.glb';
 
@@ -479,6 +480,7 @@ const CORE_IMAGE_PRELOAD_URLS = [
   INTRO_CAT_IMAGE_URL,
   CAT_IMAGE_URL,
   BOAT_IMAGE_URL,
+  BOAT_BACK_IMAGE_URL,
   FLOAT_RING_IMAGE_URL,
 ];
 
@@ -3735,6 +3737,9 @@ side: source.side ?? THREE.FrontSide,
     state.boatGroup.position.set(0, BOAT_WATERLINE_Y, BOAT_DEPTH);
     state.boatGroup.rotation.set(0, 0, 0);
     state.boatGroup.scale.setScalar(1);
+    // On replay, show the normal front-facing boat again.
+    if (state.boatFrontImage) state.boatFrontImage.visible = true;
+    if (state.boatBackImage) state.boatBackImage.visible = false;
 
     state.catGroup.position.copy(START);
     state.catGroup.rotation.set(0, 0, 0);
@@ -4036,6 +4041,7 @@ scene.add(pinkWireframeGlobe);
     // Keep the invisible drag/drop and clickable-ring meshes intact.
     const preloadStore = preloadStoreRef.current;
     let boatImage = null;
+    let boatBackImage = null;
     let floatRingImage = null;
 
     preloadTexture(preloadStore, FLOAT_RING_IMAGE_URL)
@@ -4062,11 +4068,13 @@ scene.add(pinkWireframeGlobe);
 
     Promise.all([
       preloadTexture(preloadStore, BOAT_IMAGE_URL),
+      preloadTexture(preloadStore, BOAT_BACK_IMAGE_URL),
       preloadTexture(preloadStore, CAT_IMAGE_URL),
     ])
-      .then(([boatTexture, catTexture]) => {
+      .then(([boatTexture, boatBackTexture, catTexture]) => {
         if (disposed) return;
         if (!boatTexture) throw new Error(`Could not load ${BOAT_IMAGE_URL}`);
+        if (!boatBackTexture) throw new Error(`Could not load ${BOAT_BACK_IMAGE_URL}`);
         if (!catTexture) throw new Error(`Could not load ${CAT_IMAGE_URL}`);
 
         // Boat image is upright and faces the camera, while its parent
@@ -4080,6 +4088,20 @@ scene.add(pinkWireframeGlobe);
         );
         boatImage = result.imageMesh;
         boatGroup.add(boatImage);
+
+        // The rear view occupies the same world-space width and follows the
+        // very same boatGroup through water bobbing and the flyaway path.
+        // Keep it hidden until the cat is actually dropped onto the boat.
+        const backResult = createAlienCatImage(
+          boatBackTexture,
+          BOAT_IMAGE_PLANE_SIZE,
+          -1.85,
+          'CosmicBoatBackImage',
+          camera,
+        );
+        boatBackImage = backResult.imageMesh;
+        boatBackImage.visible = false;
+        boatGroup.add(boatBackImage);
 
         // A PNG has no 3D deck geometry or CatSeat marker. Position the
         // cat near the illustrated cabin/deck, slightly in front of the boat.
@@ -4095,6 +4117,8 @@ scene.add(pinkWireframeGlobe);
 
         const currentState = stateRef.current;
         if (currentState) {
+          currentState.boatFrontImage = boatImage;
+          currentState.boatBackImage = boatBackImage;
           currentState.modelsReady = true;
           currentState.catHitRadius = Math.max(0.7, hitRadius);
         }
@@ -4181,6 +4205,8 @@ scene.add(pinkWireframeGlobe);
       cur: currentPosition,
       tgt: targetPosition,
       boatGroup,
+      boatFrontImage: null,
+      boatBackImage: null,
       catGroup,
       floatRingGroup,
       particleMaterial,
@@ -4337,6 +4363,9 @@ scene.add(pinkWireframeGlobe);
         state.launching = true;
         state.launchComplete = false;
         state.launchElapsed = 0;
+        // Swap front PNG for the rear view immediately on successful drop.
+        if (boatImage) boatImage.visible = false;
+        if (boatBackImage) boatBackImage.visible = true;
 
         boatGroup.updateMatrixWorld(true);
         state.tgt.copy(
@@ -4526,7 +4555,7 @@ pinkWireframeGlobe.rotation.z =
         const x = pastelWater.basePositions[i * 3];
         const y = pastelWater.basePositions[i * 3 + 1];
 
-        const waterTime = elapsed * 0.40;
+        const waterTime = elapsed * 0.5;
 
         const longWave =
           Math.sin(x * 0.18 + waterTime * 2.55) * 0.50;
@@ -4732,11 +4761,13 @@ if (state.landed) {
         }
       }
 
-      // Cancel parent rotation for each PNG. This prevents a flat boat
-      // disappearing edge-on when its group turns during the launch.
-      if (boatImage) {
+      // Both boat PNGs face the camera even while their parent flies away.
+      // Only one is visible at a time; both share the same boat motion.
+      if (boatImage || boatBackImage) {
         boatGroup.getWorldQuaternion(billboardParentQuaternion);
-        boatImage.quaternion.copy(billboardParentQuaternion).invert().multiply(camera.quaternion);
+        billboardParentQuaternion.invert().multiply(camera.quaternion);
+        if (boatImage) boatImage.quaternion.copy(billboardParentQuaternion);
+        if (boatBackImage) boatBackImage.quaternion.copy(billboardParentQuaternion);
       }
       if (floatRingImage) {
         floatRingGroup.getWorldQuaternion(billboardParentQuaternion);
