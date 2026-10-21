@@ -8,7 +8,7 @@ import CosmicRunnerOverlay from "./CosmicRunnerOverlay";
 
 import MissionLogoOrb from "./MissionLogoOrb";
 
-const CAT_MODEL_URL = '/models/alien-cat.glb';
+const CAT_MODEL_URL = '/models/alien-cat-image.png';
 const BOAT_MODEL_URL = '/models/cosmic-boat.glb';
 const FLOAT_RING_MODEL_URL = '/models/float-ring.glb';
 const FLOAT_RING_FALLBACK_MODEL_URL = '/models/floatring.glb';
