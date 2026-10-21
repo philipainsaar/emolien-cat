@@ -12,9 +12,8 @@ import MissionLogoOrb from "./MissionLogoOrb";
 const INTRO_CAT_IMAGE_URL = '/images/alien-cat-image-shopping-bag.png';
 const CAT_IMAGE_URL = '/images/alien-cat-image.png'; // Main water + boat scene
 const RUNNER_CAT_IMAGE_URL = '/images/alien-cat-game.png';
-const BOAT_MODEL_URL = '/models/cosmic-boat.glb';
-const FLOAT_RING_MODEL_URL = '/models/float-ring.glb';
-const FLOAT_RING_FALLBACK_MODEL_URL = '/models/floatring.glb';
+const BOAT_IMAGE_URL = '/images/cosmic-boat.png';
+const FLOAT_RING_IMAGE_URL = '/images/float-ring.png';
 const SPARKLE_HEART_MODEL_URL = '/models/SparkleHeart_LowPoly.glb';
 
 // Button sounds live in /public/sounds/.
@@ -475,25 +474,23 @@ const getDocumentLangCode = (languageCode) => {
 };
 
 
-const CORE_MODEL_PRELOAD_URLS = [
-  BOAT_MODEL_URL,
-  FLOAT_RING_MODEL_URL,
+// The intro, main character, boat and clickable float ring are all PNG textures.
+const CORE_IMAGE_PRELOAD_URLS = [
+  INTRO_CAT_IMAGE_URL,
+  CAT_IMAGE_URL,
+  BOAT_IMAGE_URL,
+  FLOAT_RING_IMAGE_URL,
 ];
 
-// These are all the GLB files currently shipped in /public/models.
-// The cat is now a PNG; only actual GLBs belong in this list.
+// Other models still use GLB and preload independently.
 const ALL_PUBLIC_GLB_PRELOAD_URLS = [
-  BOAT_MODEL_URL,
-  FLOAT_RING_MODEL_URL,
-  FLOAT_RING_FALLBACK_MODEL_URL,
   SPARKLE_HEART_MODEL_URL,
   '/models/galaxy-bag.glb',
   '/models/pastel-looping-animated-water.glb',
 ];
 
 const PUBLIC_IMAGE_PRELOAD_URLS = [
-  INTRO_CAT_IMAGE_URL,
-  CAT_IMAGE_URL,
+  ...CORE_IMAGE_PRELOAD_URLS,
   RUNNER_CAT_IMAGE_URL,
   '/images/pastel-sky.jpg',
   '/images/pastel-sky.png',
@@ -510,9 +507,6 @@ const PUBLIC_IMAGE_PRELOAD_URLS = [
   '/images/symbols/kawaii-planet.png',
 ];
 
-// Change to Math.PI if the boat model faces backward after export.
-const BOAT_MODEL_ROTATION_Y = 0;
-
 const START = new THREE.Vector3(1.62, -0.50, 5.0);
 const DEFAULT_SEAT = new THREE.Vector3(2.5, 1.0, 2.1);
 const DRAG_Z = 5.0;
@@ -524,8 +518,9 @@ const CAT_GROUND_Y = -0.5;
 // x = left/right, y = water height/submerge, z = front/back.
 // More negative x moves it left. More negative y sinks it deeper into the water.
 const FLOAT_RING_POSITION = new THREE.Vector3(-1.30, BOAT_WATERLINE_Y - 0.92, 4.88);
-const FLOAT_RING_TARGET_SIZE = 1.68;
-const FLOAT_RING_MODEL_TILT_X = -Math.PI / 2;
+// Sizes account for transparent padding inside the supplied PNGs.
+const BOAT_IMAGE_PLANE_SIZE = 7.2;
+const FLOAT_RING_IMAGE_PLANE_SIZE = 2.0;
 
 const clampNumber = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -3765,15 +3760,11 @@ side: source.side ?? THREE.FrontSide,
 
     THREE.Cache.enabled = true;
 
-    // Preload the boat and ring GLBs along with the PNG alien cat.
-    const coreAssets = [
-      ...CORE_MODEL_PRELOAD_URLS.map((url) => ({
-        url,
-        promise: preloadGLB(preloadStore, url),
-      })),
-      { url: INTRO_CAT_IMAGE_URL, promise: preloadTexture(preloadStore, INTRO_CAT_IMAGE_URL) },
-      { url: CAT_IMAGE_URL, promise: preloadTexture(preloadStore, CAT_IMAGE_URL) },
-    ];
+    // Wait for all core PNG images before allowing the intro to proceed.
+    const coreAssets = CORE_IMAGE_PRELOAD_URLS.map((url) => ({
+      url,
+      promise: preloadTexture(preloadStore, url),
+    }));
 
     Promise.allSettled(coreAssets.map((asset) => asset.promise)).then((results) => {
       results.forEach((result, index) => {
@@ -3792,13 +3783,11 @@ side: source.side ?? THREE.FrontSide,
 
     // Warm the rest of /public in idle time so the intro stays smooth.
     const cancelIdleWork = runSoonWhenIdle(() => {
-      ALL_PUBLIC_GLB_PRELOAD_URLS
-        .filter((url) => !CORE_MODEL_PRELOAD_URLS.includes(url))
-        .forEach((url) => {
-          preloadGLB(preloadStore, url).catch((error) => {
-            console.warn(`Optional model preload skipped ${url}:`, error);
-          });
+      ALL_PUBLIC_GLB_PRELOAD_URLS.forEach((url) => {
+        preloadGLB(preloadStore, url).catch((error) => {
+          console.warn(`Optional model preload skipped ${url}:`, error);
         });
+      });
 
       PUBLIC_IMAGE_PRELOAD_URLS.forEach((url) => {
         preloadTexture(preloadStore, url).catch(() => null);
@@ -3960,8 +3949,8 @@ scene.add(pinkWireframeGlobe);
       },
     );
 
-    // These groups preserve the original motion and drag behaviour.
-    // The boat uses a GLB; the cat is a camera-facing PNG mesh.
+    // Keep the original animation, dragging and interaction groups.
+    // The cat, boat and ring are now camera-facing transparent PNG meshes.
     const boatGroup = new THREE.Group();
     boatGroup.position.z = BOAT_DEPTH;
     scene.add(boatGroup);
@@ -4043,112 +4032,64 @@ scene.add(pinkWireframeGlobe);
     floatRingGlow.position.set(0, 0.28, 0);
     floatRingGroup.add(floatRingGlow);
 
-    // Reuse preloaded boat GLB and cat PNG data whenever possible.
+    // All four main-scene assets are PNG textures, not GLB models.
+    // Keep the invisible drag/drop and clickable-ring meshes intact.
     const preloadStore = preloadStoreRef.current;
+    let boatImage = null;
+    let floatRingImage = null;
 
+    preloadTexture(preloadStore, FLOAT_RING_IMAGE_URL)
+      .then((ringTexture) => {
+        if (disposed || !ringTexture) return;
 
-    loadSceneGLTF(preloadStore, FLOAT_RING_MODEL_URL)
-      .catch((primaryError) => {
-        console.warn('Could not load /models/float-ring.glb, trying /models/floatring.glb:', primaryError);
-        return loadSceneGLTF(preloadStore, FLOAT_RING_FALLBACK_MODEL_URL);
-      })
-      .then((ringGLTF) => {
-        if (disposed) {
-          disposeObject(ringGLTF.scene);
-          return;
-        }
-
-        const floatRingModel = ringGLTF.scene;
-        floatRingModel.name = 'FloatingRingModel';
-        improveModelQuality(floatRingModel, renderer, [
-          new THREE.Color(0xffb7dc),
-          new THREE.Color(0xcab8ff),
-          new THREE.Color(0xaedbff),
-          new THREE.Color(0xffffff),
-        ]);
-
-        fitModel(
-          floatRingModel,
-          FLOAT_RING_TARGET_SIZE,
-          -0.16,
-          0,
-          'max',
+        // Billboard sits partially below the waterline like the old ring.
+        const result = createAlienCatImage(
+          ringTexture,
+          FLOAT_RING_IMAGE_PLANE_SIZE,
+          -0.5,
+          'FloatingRingImage',
+          camera,
         );
-
-        // If the ring appears upright in your exported GLB, change this constant to 0.
-        floatRingModel.rotation.x = FLOAT_RING_MODEL_TILT_X;
-        floatRingModel.rotation.z = 0.14;
-        floatRingModel.traverse((object) => {
-          object.userData.isFloatingRing = true;
-        });
-
-        floatRingGroup.add(floatRingModel);
+        floatRingImage = result.imageMesh;
+        floatRingImage.userData.isFloatingRing = true;
+        // Avoid drawing a plain rectangle where the PNG has transparency.
+        floatRingImage.material.alphaTest = 0.025;
+        floatRingGroup.add(floatRingImage);
       })
       .catch((error) => {
-        console.warn('Floating ring model could not be loaded:', error);
+        console.warn('Floating ring PNG could not be loaded:', error);
       });
 
     Promise.all([
-      loadSceneGLTF(preloadStore, BOAT_MODEL_URL),
+      preloadTexture(preloadStore, BOAT_IMAGE_URL),
       preloadTexture(preloadStore, CAT_IMAGE_URL),
     ])
-      .then(([boatGLTF, catTexture]) => {
-        if (disposed) {
-          disposeObject(boatGLTF.scene);
-          return;
-        }
+      .then(([boatTexture, catTexture]) => {
+        if (disposed) return;
+        if (!boatTexture) throw new Error(`Could not load ${BOAT_IMAGE_URL}`);
         if (!catTexture) throw new Error(`Could not load ${CAT_IMAGE_URL}`);
 
-        const boatModel = boatGLTF.scene;
-        boatModel.name = 'CosmicBoatModel';
-        improveModelQuality(boatModel, renderer, [
-          new THREE.Color(0xaedbff),
-          new THREE.Color(0xcab8ff),
-          new THREE.Color(0xffb7dc),
-        ]);
-
-        const boatBox = fitModel(
-          boatModel,
-          7.0,
-          -0.65,
-          BOAT_MODEL_ROTATION_Y,
-          'horizontal',
+        // Boat image is upright and faces the camera, while its parent
+        // group keeps the old water bob and fly-away motion.
+        const result = createAlienCatImage(
+          boatTexture,
+          BOAT_IMAGE_PLANE_SIZE,
+          -1.85,
+          'CosmicBoatImage',
+          camera,
         );
+        boatImage = result.imageMesh;
+        boatGroup.add(boatImage);
 
-        boatGroup.add(boatModel);
-        createMixer(boatModel, boatGLTF.animations, mixers);
-
-        const boatSize = boatBox.getSize(new THREE.Vector3());
-
-        // Optional exact marker:
-        // Add an Empty named "CatSeat" inside cosmic-boat.glb to control
-        // the final cat position precisely.
-        const seatMarker =
-          boatModel.getObjectByName('CatSeat') ||
-          boatModel.getObjectByName('cat_seat') ||
-          boatModel.getObjectByName('CAT_SEAT');
-
-        if (seatMarker) {
-          const markerWorld = seatMarker.getWorldPosition(new THREE.Vector3());
-          seatPosition.copy(boatGroup.worldToLocal(markerWorld));
-        } else {
-          const estimatedDeckY = boatBox.min.y + boatSize.y * 0.25;
-
-          seatPosition.set(
-            -0.8,
-            estimatedDeckY - CAT_GROUND_Y + 0.03,
-            boatBox.max.z - boatSize.z * 0.38,
-          );
-        }
-
-        dropZoneRing.position.y =
-          seatPosition.y + CAT_GROUND_Y + 0.04;
+        // A PNG has no 3D deck geometry or CatSeat marker. Position the
+        // cat near the illustrated cabin/deck, slightly in front of the boat.
+        seatPosition.set(-0.25, 1.55, 0.55);
+        dropZoneRing.position.y = seatPosition.y + CAT_GROUND_Y + 0.04;
 
         const { imageMesh: catImage, width: catWidth, height: catHeight } =
           createAlienCatImage(
             catTexture, 2.35, CAT_GROUND_Y, 'AlienCatImage', camera,
           );
-
         catGroup.add(catImage);
         const hitRadius = Math.max(catWidth, catHeight) * 0.7;
 
@@ -4159,11 +4100,10 @@ scene.add(pinkWireframeGlobe);
         }
       })
       .catch((error) => {
-        console.error('Cosmic Voyage model/setup error:', error);
-
+        console.error('Cosmic Voyage image/setup error:', error);
         if (!disposed) {
           setModelError(
-            `Model setup failed: ${error?.message || 'Unknown GLB/model error'}`,
+            `Image setup failed: ${error?.message || 'Unknown PNG/scene error'}`,
           );
         }
       });
@@ -4527,6 +4467,8 @@ scene.add(pinkWireframeGlobe);
     window.addEventListener('resize', onResize);
 
     const clock = new THREE.Clock();
+    // Reusable quaternion, no per-frame allocation for image billboarding.
+    const billboardParentQuaternion = new THREE.Quaternion();
     let elapsed = 0;
 
     const lerp = (from, to, amount) =>
@@ -4786,6 +4728,17 @@ if (state.landed) {
         if (state.burstT > 2) {
           state.burstT = -1;
         }
+      }
+
+      // Cancel parent rotation for each PNG. This prevents a flat boat
+      // disappearing edge-on when its group turns during the launch.
+      if (boatImage) {
+        boatGroup.getWorldQuaternion(billboardParentQuaternion);
+        boatImage.quaternion.copy(billboardParentQuaternion).invert().multiply(camera.quaternion);
+      }
+      if (floatRingImage) {
+        floatRingGroup.getWorldQuaternion(billboardParentQuaternion);
+        floatRingImage.quaternion.copy(billboardParentQuaternion).invert().multiply(camera.quaternion);
       }
 
       renderer.render(scene, camera);
