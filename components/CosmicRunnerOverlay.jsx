@@ -15,6 +15,12 @@ const RUNNER_RENDER_PIXEL_RATIO = 1;
 const RUNNER_SCORE_MULTIPLIER = 12;
 const RUNNER_SPARKLE_COUNT = 12;
 const RUNNER_STRIPE_COUNT = 12;
+// All 19 transparent gem images live in /public/images/.
+// Every available gem is equally likely to appear as a runner obstacle.
+const GEM_OBSTACLE_IMAGE_URLS = Array.from(
+  { length: 19 },
+  (_, index) => `/images/gem${index + 1}.png`,
+);
 
 const LEADERBOARD_API_URL = "/api/leaderboard";
 const LOCAL_LEADERBOARD_KEY = "cosmicRunnerLeaderboardLocal";
@@ -338,7 +344,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
           cat.position.y = height * 0.5;
           cat.quaternion.copy(camera.quaternion);
           setVisual(cat);
-          setStatus("");
+          if (gemAssetsReady) setStatus("");
         },
         undefined,
         () => {
@@ -370,33 +376,99 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     const obstacleGroup = new THREE.Group();
     scene.add(obstacleGroup);
 
+    // Load each PNG once and reuse its GPU texture for every appearance.
+    // Sprites automatically face the camera and preserve transparent edges.
+    const gemLoader = new THREE.TextureLoader();
+    let gemTextures = [];
+    let gemAssetsReady = false;
+    let lastGemUrl = null;
+
     function makeObstacle() {
+      if (!gemTextures.length) return null;
+
+      // Uniform selection across all 19 images, without an immediate repeat.
+      const candidates = gemTextures.length > 1
+        ? gemTextures.filter((entry) => entry.url !== lastGemUrl)
+        : gemTextures;
+      const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+      lastGemUrl = chosen.url;
+
       const group = new THREE.Group();
-      const h = THREE.MathUtils.randFloat(0.68, 1.22);
-      const w = THREE.MathUtils.randFloat(0.28, 0.48);
-      const palette = [colors.hotPink, colors.purple, colors.blue, colors.yellow];
-      const mat = new THREE.MeshStandardMaterial({
-        color: palette[Math.floor(Math.random() * palette.length)],
-        roughness: 0.31,
-        metalness: 0.08,
+      const height = THREE.MathUtils.randFloat(0.85, 1.22);
+      const width = height * chosen.aspect;
+      const material = new THREE.SpriteMaterial({
+        map: chosen.texture,
+        color: 0xffffff,
+        transparent: true,
+        alphaTest: 0.04,
+        depthTest: true,
+        depthWrite: false,
+        fog: false,
+        toneMapped: false,
       });
-      const crystal = new THREE.Mesh(new THREE.ConeGeometry(w, h, 5), mat);
-      crystal.position.y = h / 2;
-      crystal.rotation.y = Math.random() * Math.PI;
-      crystal.castShadow = true;
-      group.add(crystal);
-      group.userData.width = w * 1.1;
-      group.userData.height = h;
-      group.userData.spin = THREE.MathUtils.randFloat(-2, 2);
+      const sprite = new THREE.Sprite(material);
+      sprite.name = `RunnerGem_${chosen.url.split('/').pop()}`;
+      sprite.scale.set(width, height, 1);
+      sprite.position.y = height * 0.5;
+      group.add(sprite);
+
+      // Keep gameplay hitboxes aligned to the visible (rounded) gem artwork.
+      group.userData.width = width * 0.78;
+      group.userData.height = height * 0.85;
+      group.userData.centerY = height * 0.5;
+      group.userData.sprite = sprite;
+      group.userData.wobblePhase = Math.random() * Math.PI * 2;
       return group;
+    }
+
+    function disposeObstacle(obstacle) {
+      obstacleGroup.remove(obstacle);
+      obstacle.userData.sprite?.material?.dispose();
     }
 
     function spawnObstacle(x = 5.2) {
       const obstacle = makeObstacle();
+      if (!obstacle) return;
       obstacle.position.set(x, 0, THREE.MathUtils.randFloat(-0.18, 0.18));
       obstacleGroup.add(obstacle);
       obstacles.push(obstacle);
     }
+
+    // Start gameplay only when the PNGs are ready: no blank or white rectangles.
+    Promise.allSettled(
+      GEM_OBSTACLE_IMAGE_URLS.map(async (url) => {
+        const texture = await gemLoader.loadAsync(url);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.magFilter = THREE.LinearFilter;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+        const image = texture.image;
+        const width = image?.naturalWidth || image?.width || 1;
+        const height = image?.naturalHeight || image?.height || 1;
+        return { url, texture, aspect: width / height };
+      }),
+    ).then((results) => {
+      const loaded = results
+        .filter((result) => result.status === 'fulfilled')
+        .map((result) => result.value);
+
+      if (dead) {
+        loaded.forEach(({ texture }) => texture.dispose());
+        return;
+      }
+      gemTextures = loaded;
+      const missingCount = results.length - loaded.length;
+      if (missingCount) {
+        console.warn(`${missingCount} runner gem PNG(s) could not load.`, results);
+      }
+      if (!gemTextures.length) {
+        setStatus('Could not load the obstacle PNGs from /images/.');
+        return;
+      }
+      gemAssetsReady = true;
+      setStatus('');
+      restart();
+    });
 
     const sparkles = [];
     const sparkleMat = new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: colors.pink, emissiveIntensity: 0.62 });
@@ -414,7 +486,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     let velocityY = 0;
     let grounded = true;
-    let running = true;
+    let running = false; // Wait for the PNG obstacle textures before starting.
     let speed = 4.3;
     let score = 0;
     let best = Number(localStorage.getItem("cosmicRunnerBest") || 0);
@@ -440,6 +512,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     }
 
     function restart() {
+      if (!gemAssetsReady) return;
       running = true;
       speed = 4.3;
       score = 0;
@@ -454,7 +527,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       setLastScore(0);
       setScoreSubmitted(false);
       overRef.current?.classList.remove("show");
-      for (const obstacle of obstacles) obstacleGroup.remove(obstacle);
+      for (const obstacle of obstacles) disposeObstacle(obstacle);
       obstacles.length = 0;
       spawnObstacle(5.4);
       text();
@@ -488,6 +561,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     }
 
     function jump() {
+      if (!gemAssetsReady) return;
       if (!running) {
         restart();
         return;
@@ -505,7 +579,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         new THREE.Vector3(0.72, 1.55, 0.82)
       );
       obstacleBox.setFromCenterAndSize(
-        new THREE.Vector3(obstacle.position.x, obstacle.position.y + obstacle.userData.height / 2, obstacle.position.z),
+        new THREE.Vector3(obstacle.position.x, obstacle.position.y + obstacle.userData.centerY, obstacle.position.z),
         new THREE.Vector3(obstacle.userData.width, obstacle.userData.height, 0.76)
       );
       return playerBox.intersectsBox(obstacleBox);
@@ -574,16 +648,20 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         for (let i = obstacles.length - 1; i >= 0; i--) {
           const obstacle = obstacles[i];
           obstacle.position.x -= speed * delta;
-          obstacle.rotation.y += obstacle.userData.spin * delta;
+          // A tiny, playful rocking motion without turning the flat sprite edge-on.
+          const gemSprite = obstacle.userData.sprite;
+          if (gemSprite) {
+            gemSprite.material.rotation = Math.sin(now * 0.0025 + obstacle.userData.wobblePhase) * 0.09;
+          }
           if (hit(obstacle)) endGame();
           if (obstacle.position.x < -4.4) {
-            obstacleGroup.remove(obstacle);
+            disposeObstacle(obstacle);
             obstacles.splice(i, 1);
           }
         }
-      } else {
-  runner.rotation.z = Math.PI / 2;
-  runner.position.y = 0;
+      } else if (gemAssetsReady) {
+        runner.rotation.z = Math.PI / 2;
+        runner.position.y = 0;
       }
 
       renderer.render(scene, camera);
@@ -604,7 +682,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       jump();
     }
 
-    restart();
+    setStatus('Loading gem obstacles...');
     resize();
     text();
     window.addEventListener("resize", resize);
@@ -619,6 +697,8 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       window.removeEventListener("keydown", onKey);
       mount.removeEventListener("pointerdown", onPointer);
       stopGameMusic(true);
+      for (const obstacle of obstacles) disposeObstacle(obstacle);
+      gemTextures.forEach(({ texture }) => texture.dispose());
       if (visual) {
         visual.geometry?.dispose();
         visual.material?.dispose();
@@ -635,6 +715,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       {open && (
         <div className="cosmicRunnerOverlay">
           <div ref={mountRef} className="cosmicRunnerCanvas" />
+          <div ref={statusRef} className="cosmicRunnerGlass cosmicRunnerStatus" role="status" aria-live="polite" />
 
           <div className="cosmicRunnerHud">
             <div className="cosmicRunnerGlass cosmicRunnerScore">
@@ -809,6 +890,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
           cursor: pointer;
           white-space: nowrap;
         }
+        .cosmicRunnerStatus:empty { display: none; }
         .cosmicRunnerStatus {
           position: fixed;
           left: 50%;
