@@ -4665,15 +4665,15 @@ boatGroup.rotation.x = 0;
 
       catGroup.position.copy(state.cur);
 
-if (!state.isDragging && !state.landed) {
-  const bob = Math.sin(elapsed * 1.5);
+      if (!state.isDragging && !state.landed) {
+  const jump = Math.abs(Math.sin(elapsed * 3.2));
 
-  catGroup.position.y += bob * 0.12;
-  catGroup.position.z += Math.sin(elapsed * 0.8) * 0.04;
+  catGroup.position.y += jump * 0.38;
+  catGroup.position.z += Math.sin(elapsed * 1.6) * 0.08;
 
   catGroup.rotation.y = 0;
-  catGroup.rotation.z = Math.sin(elapsed * 1.2) * 0.035;
-  catGroup.rotation.x = Math.sin(elapsed * 1.5) * -0.035;
+  catGroup.rotation.z = Math.sin(elapsed * 6.4) * 0.08;
+  catGroup.rotation.x = Math.sin(elapsed * 3.2) * -0.08;
 } else if (state.isDragging) {
   catGroup.rotation.y = 0;
       }
