@@ -1958,8 +1958,10 @@ html[lang="zh-CN"] *::after {
 }
 
 .ringSocialButton img {
-  width: min(58%, 30px);
-  height: min(58%, 30px);
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
   display: block;
   fill: currentColor;
   filter:
