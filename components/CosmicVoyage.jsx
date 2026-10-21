@@ -8,7 +8,10 @@ import CosmicRunnerOverlay from "./CosmicRunnerOverlay";
 
 import MissionLogoOrb from "./MissionLogoOrb";
 
-const CAT_MODEL_URL = '/models/alien-cat-image.png';
+// PNG used for the alien cat in the intro and Three.js voyage.
+const CAT_IMAGE_URL = '/images/alien-cat-image.png';
+// The separate runner mini-game still expects a skinned GLB model.
+const RUNNER_CAT_MODEL_URL = '/models/alien-cat.glb';
 const BOAT_MODEL_URL = '/models/cosmic-boat.glb';
 const FLOAT_RING_MODEL_URL = '/models/float-ring.glb';
 const FLOAT_RING_FALLBACK_MODEL_URL = '/models/floatring.glb';
@@ -473,15 +476,13 @@ const getDocumentLangCode = (languageCode) => {
 
 
 const CORE_MODEL_PRELOAD_URLS = [
-  CAT_MODEL_URL,
   BOAT_MODEL_URL,
   FLOAT_RING_MODEL_URL,
 ];
 
 // These are all the GLB files currently shipped in /public/models.
-// Cat + boat are highest priority because the main scene needs them first.
+// The cat is now a PNG; only actual GLBs belong in this list.
 const ALL_PUBLIC_GLB_PRELOAD_URLS = [
-  CAT_MODEL_URL,
   BOAT_MODEL_URL,
   FLOAT_RING_MODEL_URL,
   FLOAT_RING_FALLBACK_MODEL_URL,
@@ -491,6 +492,7 @@ const ALL_PUBLIC_GLB_PRELOAD_URLS = [
 ];
 
 const PUBLIC_IMAGE_PRELOAD_URLS = [
+  CAT_IMAGE_URL,
   '/images/pastel-sky.jpg',
   '/images/pastel-sky.png',
   '/images/water-texture.jpg',
@@ -506,8 +508,7 @@ const PUBLIC_IMAGE_PRELOAD_URLS = [
   '/images/symbols/kawaii-planet.png',
 ];
 
-// Change either value to Math.PI if a model faces backward after export.
-const CAT_MODEL_ROTATION_Y = 0;
+// Change to Math.PI if the boat model faces backward after export.
 const BOAT_MODEL_ROTATION_Y = 0;
 
 const START = new THREE.Vector3(1.62, -0.50, 5.0);
@@ -1073,6 +1074,48 @@ function fitModel(root, targetSize, groundY, rotationY, scaleMode = 'max') {
   root.updateMatrixWorld(true);
 
   return new THREE.Box3().setFromObject(root);
+}
+
+// Create a camera-facing PNG character while retaining a normal Three.js
+// Object3D parent for dragging, jumping, rotation, and boat-follow motion.
+// Clone the shared preloaded texture so disposing the intro scene does not
+// dispose the image texture used later by the main scene.
+function createAlienCatImage(preloadedTexture, maxDimension, groundY, name, camera) {
+  const sourceImage = preloadedTexture?.image;
+  const sourceWidth = sourceImage?.naturalWidth || sourceImage?.width;
+  const sourceHeight = sourceImage?.naturalHeight || sourceImage?.height;
+
+  if (!sourceWidth || !sourceHeight) {
+    throw new Error('The alien-cat-image.png texture has no valid dimensions.');
+  }
+
+  const aspect = sourceWidth / sourceHeight;
+  const width = maxDimension * Math.min(1, aspect);
+  const height = maxDimension / Math.max(1, aspect);
+
+  const texture = preloadedTexture.clone();
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+
+  const imageMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, height),
+    new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      alphaTest: 0.025,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    }),
+  );
+  imageMesh.name = name;
+  imageMesh.position.set(0, groundY + height * 0.5, 0);
+  // Flat image faces the camera rather than showing its paper-thin edge.
+  if (camera) imageMesh.quaternion.copy(camera.quaternion);
+  return { imageMesh, width, height };
 }
 
 function createMixer(root, clips, mixers) {
@@ -2221,33 +2264,22 @@ const introDragState = {
 };
 
 let introCatLoadedAt = 0;
-const introMixers = [];
-    
 
-    loadSceneGLTF(preloadStore, CAT_MODEL_URL)
-      .then((gltf) => {
-        if (!gltf?.scene) return;
+    preloadTexture(preloadStore, CAT_IMAGE_URL)
+      .then((texture) => {
+        if (!texture) throw new Error(`Could not load ${CAT_IMAGE_URL}`);
+        if (disposed) return;
 
-        if (disposed) {
-          disposeObject(gltf.scene);
-          return;
-        }
-
-        const catModel = gltf.scene;
-        catModel.name = 'ShoppingIntroAlienCat';
-        improveModelQuality(catModel, renderer, [
-          new THREE.Color(0xffb7dc),
-          new THREE.Color(0xcab8ff),
-          new THREE.Color(0xaedbff),
-        ]);
-        fitModel(catModel, 3.55, CAT_GROUND_IN_INTRO, CAT_MODEL_ROTATION_Y, 'max');
-        introCatGroup.add(catModel);
-        createMixer(catModel, gltf.animations, introMixers);
+        const { imageMesh } = createAlienCatImage(
+          texture, 3.55, CAT_GROUND_IN_INTRO,
+          'ShoppingIntroAlienCatImage', introCamera,
+        );
+        introCatGroup.add(imageMesh);
         introCatLoadedAt = elapsed;
         introCatGroup.visible = true;
       })
       .catch((error) => {
-        console.error('Could not load intro alien-cat.glb:', error);
+        console.error('Could not load intro alien cat PNG:', error);
       });
 
     const resizeCatCanvas = () => {
@@ -2517,7 +2549,6 @@ introCatGroup.rotation.z = introDragState.isDragging
 
 introCatGroup.scale.setScalar(1 + Math.max(0, bounce) * 0.18);
 
-      introMixers.forEach((mixer) => mixer.update(dt));
       renderer.render(introScene, introCamera);
 
 const exitElapsed =
@@ -2572,7 +2603,6 @@ window.removeEventListener('pointercancel', finishIntroCatDrag);
 catCanvas.style.pointerEvents = '';
 catCanvas.style.touchAction = '';
 document.body.style.cursor = '';
-  introMixers.forEach((mixer) => mixer.stopAllAction());
 
   disposeObject(introScene);
   renderer.dispose();
@@ -3733,15 +3763,21 @@ side: source.side ?? THREE.FrontSide,
 
     THREE.Cache.enabled = true;
 
-    // Start the two models needed for first paint immediately.
-    Promise.allSettled(
-      CORE_MODEL_PRELOAD_URLS.map((url) => preloadGLB(preloadStore, url)),
-    ).then((results) => {
+    // Preload the boat and ring GLBs along with the PNG alien cat.
+    const coreAssets = [
+      ...CORE_MODEL_PRELOAD_URLS.map((url) => ({
+        url,
+        promise: preloadGLB(preloadStore, url),
+      })),
+      { url: CAT_IMAGE_URL, promise: preloadTexture(preloadStore, CAT_IMAGE_URL) },
+    ];
+
+    Promise.allSettled(coreAssets.map((asset) => asset.promise)).then((results) => {
       results.forEach((result, index) => {
-        if (result.status === 'rejected') {
+        if (result.status === 'rejected' || (result.status === 'fulfilled' && !result.value)) {
           console.error(
-            `Could not preload core model ${CORE_MODEL_PRELOAD_URLS[index]}:`,
-            result.reason,
+            `Could not preload core asset ${coreAssets[index].url}:`,
+            result.status === 'rejected' ? result.reason : 'Asset unavailable',
           );
         }
       });
@@ -3921,8 +3957,8 @@ scene.add(pinkWireframeGlobe);
       },
     );
 
-    // These groups preserve all of the original motion and drag behaviour.
-    // The GLB scenes are inserted inside them after loading.
+    // These groups preserve the original motion and drag behaviour.
+    // The boat uses a GLB; the cat is a camera-facing PNG mesh.
     const boatGroup = new THREE.Group();
     boatGroup.position.z = BOAT_DEPTH;
     scene.add(boatGroup);
@@ -4004,9 +4040,7 @@ scene.add(pinkWireframeGlobe);
     floatRingGlow.position.set(0, 0.28, 0);
     floatRingGroup.add(floatRingGlow);
 
-    // Load the boat and cat from the intro preload cache when possible.
-    // If the intro finished before a preload completed, this waits on the same Promise
-    // instead of starting a duplicate network request.
+    // Reuse preloaded boat GLB and cat PNG data whenever possible.
     const preloadStore = preloadStoreRef.current;
 
 
@@ -4053,14 +4087,14 @@ scene.add(pinkWireframeGlobe);
 
     Promise.all([
       loadSceneGLTF(preloadStore, BOAT_MODEL_URL),
-      loadSceneGLTF(preloadStore, CAT_MODEL_URL),
+      preloadTexture(preloadStore, CAT_IMAGE_URL),
     ])
-      .then(([boatGLTF, catGLTF]) => {
+      .then(([boatGLTF, catTexture]) => {
         if (disposed) {
           disposeObject(boatGLTF.scene);
-          disposeObject(catGLTF.scene);
           return;
         }
+        if (!catTexture) throw new Error(`Could not load ${CAT_IMAGE_URL}`);
 
         const boatModel = boatGLTF.scene;
         boatModel.name = 'CosmicBoatModel';
@@ -4107,28 +4141,13 @@ scene.add(pinkWireframeGlobe);
         dropZoneRing.position.y =
           seatPosition.y + CAT_GROUND_Y + 0.04;
 
-        const catModel = catGLTF.scene;
-        catModel.name = 'AlienCatModel';
-        improveModelQuality(catModel, renderer, [
-          new THREE.Color(0xffb7dc),
-          new THREE.Color(0xcab8ff),
-          new THREE.Color(0xaedbff),
-        ]);
+        const { imageMesh: catImage, width: catWidth, height: catHeight } =
+          createAlienCatImage(
+            catTexture, 2.35, CAT_GROUND_Y, 'AlienCatImage', camera,
+          );
 
-        const catBox = fitModel(
-          catModel,
-          2.35,
-          CAT_GROUND_Y,
-          CAT_MODEL_ROTATION_Y,
-          'max',
-        );
-
-        catGroup.add(catModel);
-        createMixer(catModel, catGLTF.animations, mixers);
-
-        const catSize = catBox.getSize(new THREE.Vector3());
-        const hitRadius =
-          Math.max(catSize.x, catSize.y, catSize.z) * 0.7;
+        catGroup.add(catImage);
+        const hitRadius = Math.max(catWidth, catHeight) * 0.7;
 
         const currentState = stateRef.current;
         if (currentState) {
@@ -4497,6 +4516,9 @@ scene.add(pinkWireframeGlobe);
       );
       camera.lookAt(0, 0, 0);
       camera.updateProjectionMatrix();
+      // Update the PNG facing direction when desktop/mobile camera changes.
+      const catImage = catGroup.getObjectByName('AlienCatImage');
+      if (catImage) catImage.quaternion.copy(camera.quaternion);
     };
 
     window.addEventListener('resize', onResize);
@@ -5008,7 +5030,7 @@ if (state.landed) {
             requestSiteMusic('stop', RUNNER_GAME_MUSIC_FILE, { reset: true });
             setRunnerGameOpen(false);
           }}
-          modelPath={CAT_MODEL_URL}
+          modelPath={RUNNER_CAT_MODEL_URL}
         />
       )}
 	          
