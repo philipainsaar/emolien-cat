@@ -5165,9 +5165,12 @@ if (state.landed) {
     rel="noreferrer"
     aria-label="TikTok"
   >
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M15.9 3.2c.3 2.4 1.6 3.9 4 4.1v3.2c-1.4.1-2.6-.3-3.9-1.1v5.8c0 3.7-2.4 5.9-5.6 5.9-3 0-5.3-2.1-5.3-5 0-3.2 2.6-5.4 6-5.1v3.4c-1.6-.5-2.8.3-2.8 1.6 0 1.1.9 1.9 2 1.9 1.3 0 2.1-.8 2.1-2.7v-12h3.5Z" />
-    </svg>
+    <img
+      className="ringTiktokImage"
+      src="/images/tiktok-icon.png"
+      alt="TikTok"
+      aria-hidden="true"
+    />
   </a>
 
   <a
@@ -5178,9 +5181,12 @@ if (state.landed) {
     rel="noreferrer"
     aria-label="Instagram"
   >
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M7.6 2.7h8.8c2.7 0 4.9 2.2 4.9 4.9v8.8c0 2.7-2.2 4.9-4.9 4.9H7.6c-2.7 0-4.9-2.2-4.9-4.9V7.6c0-2.7 2.2-4.9 4.9-4.9Zm0 3c-1.1 0-1.9.8-1.9 1.9v8.8c0 1.1.8 1.9 1.9 1.9h8.8c1.1 0 1.9-.8 1.9-1.9V7.6c0-1.1-.8-1.9-1.9-1.9H7.6Zm4.4 3.1a3.2 3.2 0 1 1 0 6.4 3.2 3.2 0 0 1 0-6.4Zm0 2.2a1 1 0 1 0 0 2.1 1 1 0 0 0 0-2.1Zm4.2-2.7a1.1 1.1 0 1 1 0-2.2 1.1 1.1 0 0 1 0 2.2Z" />
-    </svg>
+    <img
+      className="ringInstagramImage"
+      src="/images/instagram-icon.png"
+      alt="Instagram"
+      aria-hidden="true"
+    />
   </a>
 
   <a
@@ -5189,9 +5195,12 @@ if (state.landed) {
     data-button-sound="/sounds/social-email.mp3"
     aria-label="Email"
   >
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M3.8 5h16.4c1 0 1.8.8 1.8 1.8v10.4c0 1-.8 1.8-1.8 1.8H3.8c-1 0-1.8-.8-1.8-1.8V6.8C2 5.8 2.8 5 3.8 5Zm.9 3.4v7.9h14.6V8.4l-7.3 5-7.3-5Zm1.1-1.4 6.2 4.2L18.2 7H5.8Z" />
-    </svg>
+    <img
+      className="ringEmailImage"
+      src="/images/email-icon.png"
+      alt="Email"
+      aria-hidden="true"
+    />
   </a>
 
   <button
@@ -5201,9 +5210,12 @@ if (state.landed) {
     data-button-sound="/sounds/social-share.mp3"
     onClick={shareWebsite}
   >
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M18 16.1c-1 0-1.9.4-2.5 1.1L8.9 13.3c.1-.4.1-.8 0-1.2l6.5-3.8A3.3 3.3 0 1 0 14.3 6l-6.5 3.8a3.3 3.3 0 1 0 0 5.8l6.6 3.9A3.3 3.3 0 1 0 18 16.1Z" />
-    </svg>
+    <img
+      className="ringShareImage"
+      src="/images/share-icon.png"
+      alt="Share"
+      aria-hidden="true"
+    />
   </button>
 </div>
             
