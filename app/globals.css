@@ -992,10 +992,22 @@ select,
 }
 
 .shoppingIntroSplash {
-  background-image: url('/images/intro-background.png');
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  pointer-events: auto;
+  opacity: 1;
+  transition: opacity 0.62s ease;
+
+  background-image: url('/images/intro-background.jpg');
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
+
+  will-change: opacity;
 }
 
 .shoppingIntroSplash.isFading {
