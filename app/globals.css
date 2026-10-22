@@ -1440,7 +1440,7 @@ select,
 .shoppingIntroTextCard {
   position: absolute;
   left: 50%;
-  top: 112px;
+  top: 135px;
   transform: translateX(-50%);
   width: min(430px, 84vw);
   margin: 0;
@@ -1489,7 +1489,7 @@ select,
 
 @media (max-width: 520px) {
   .shoppingIntroTextCard {
-    top: 135px;
+    top: 115px;
     width: min(330px, 82vw);
     padding: 10px 14px 12px;
     border-radius: 18px;
