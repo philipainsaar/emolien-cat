@@ -441,7 +441,7 @@ button {
 .loadingNetworkTicker {
   position: absolute;
   left: 50%;
-  top: calc(50% - 100px);
+  top: calc(50% - 200px);
   z-index: 10000;
 
   width: min(420px, 88vw);
