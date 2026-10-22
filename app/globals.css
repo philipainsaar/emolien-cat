@@ -1442,7 +1442,11 @@ select,
   left: 50%;
   top: 135px;
   transform: translateX(-50%);
-  width: min(430px, 84vw);
+
+  width: min(94vw, 760px);
+  min-width: min(210px, 58vw);
+  max-width: calc(100vw - 24px);
+
   margin: 0;
   padding: 12px 18px 14px;
   border-radius: 22px;
@@ -2276,13 +2280,30 @@ html[lang="it"] .shoppingIntroText span {
  * CosmicVoyage.jsx sets <html lang="en"> when English is selected.
  * These overrides keep the other language-specific fonts unchanged.
  */
-html[lang="en"] {
+html:is(
+  [lang="en"],
+  [lang="fr"],
+  [lang="de"],
+  [lang="es"],
+  [lang="it"],
+  [lang="pt"],
+  [lang="pt-PT"],
+  [lang="sv"]
+) {
   --font-main: "Inconsolata", monospace;
   --font-display: "Unkempt", "Inconsolata", monospace;
 }
 
 /* Body copy, interactive UI, and secondary labels use Inconsolata. */
-html[lang="en"] :is(
+html:is(
+  [lang="en"],
+  [lang="fr"],
+  [lang="de"],
+  [lang="es"],
+  [lang="it"],
+  [lang="pt"],
+  [lang="pt-PT"],
+  [lang="sv"],
   body,
   .stage,
   .ui,
@@ -2309,7 +2330,15 @@ html[lang="en"] :is(
 }
 
 /* Section titles and actual headlines use PixelScript. */
-html[lang="en"] :is(
+html:is(
+  [lang="en"],
+  [lang="fr"],
+  [lang="de"],
+  [lang="es"],
+  [lang="it"],
+  [lang="pt"],
+  [lang="pt-PT"],
+  [lang="sv"],
   h1,
   h2,
   h3,
