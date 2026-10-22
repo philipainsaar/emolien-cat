@@ -2275,11 +2275,9 @@ html[lang="it"] .shoppingIntroText span {
   }
 
 
-/*
- * ENGLISH TYPE
- * CosmicVoyage.jsx sets <html lang="en"> when English is selected.
- * These overrides keep the other language-specific fonts unchanged.
- */
+
+/* ENGLISH + EUROPEAN LANGUAGE FONTS */
+
 html:is(
   [lang="en"],
   [lang="fr"],
@@ -2291,10 +2289,11 @@ html:is(
   [lang="sv"]
 ) {
   --font-main: "Inconsolata", monospace;
-  --font-display: "Unkempt", "Inconsolata", monospace;
+  --font-display: "Unkempt", cursive;
 }
 
-/* Body copy, interactive UI, and secondary labels use Inconsolata. */
+/* BODY TEXT: INCONSOLATA */
+
 html:is(
   [lang="en"],
   [lang="fr"],
@@ -2303,7 +2302,8 @@ html:is(
   [lang="it"],
   [lang="pt"],
   [lang="pt-PT"],
-  [lang="sv"],
+  [lang="sv"]
+) :is(
   body,
   .stage,
   .ui,
@@ -2321,15 +2321,17 @@ html:is(
   .termText,
   .missionImageLink,
   .shoppingIntroTextCard,
+  .shoppingIntroEnterButton,
   .ringChatBox,
   .ringTerminalText,
   .ringTerminalCursor,
   .ringSocialButton
 ) {
-  font-family: var(--font-main) !important;
+  font-family: "Inconsolata", monospace !important;
 }
 
-/* Section titles and actual headlines use PixelScript. */
+/* HEADLINES: UNKEMPT */
+
 html:is(
   [lang="en"],
   [lang="fr"],
@@ -2338,7 +2340,8 @@ html:is(
   [lang="it"],
   [lang="pt"],
   [lang="pt-PT"],
-  [lang="sv"],
+  [lang="sv"]
+) :is(
   h1,
   h2,
   h3,
@@ -2357,6 +2360,6 @@ html:is(
   .ringChatHeader,
   .missionImageLink span
 ) {
-  font-family: var(--font-display) !important;
+  font-family: "Unkempt", cursive !important;
   font-weight: 400;
 }
